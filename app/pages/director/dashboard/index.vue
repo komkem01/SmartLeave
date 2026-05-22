@@ -756,8 +756,10 @@ const closeConfirmModal = () => {
 const updateLeaveStatus = async (id: string, status: LeaveStatus, rejectReason?: string) => {
   isActionLoading.value = true
   try {
+    const token = import.meta.client ? localStorage.getItem('smartleave:access_token') : ''
     await $fetch(`${BASE}/leave-request/${id}`, {
       method: 'PATCH',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: {
         status,
         reject_reason: rejectReason || '',

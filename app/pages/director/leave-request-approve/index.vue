@@ -224,6 +224,7 @@
                 <th class="py-3 px-6">ช่วงวันที่ขอลาหยุด</th>
                 <th class="py-3 px-6 text-center">จำนวนวัน</th>
                 <th class="py-3 px-6">สถานะการพิจารณา</th>
+                <th class="py-3 px-6">ผู้อนุมัติ</th>
                 <th class="py-3 px-6 text-right">การจัดการ</th>
               </tr>
             </thead>
@@ -286,6 +287,10 @@
                   </span>
                 </td>
 
+                <td class="py-4 px-6 text-slate-500 font-medium">
+                  {{ req.approverName || '-' }}
+                </td>
+
                 <!-- การจัดการ (Action buttons) -->
                 <td class="py-4 px-6 text-right">
                   <div class="flex items-center justify-end gap-2 flex-wrap">
@@ -316,7 +321,7 @@
               </tr>
               <tr v-if="filteredRequests.length === 0">
                 <td
-                  colspan="6"
+                  colspan="7"
                   class="py-12 text-center text-slate-400 italic font-medium"
                 >
                   ไม่พบใบคำร้องขอลาที่สอดคล้องกับตัวเลือกค้นหาของคุณ
@@ -711,6 +716,7 @@ interface LeaveRequest {
   status: 'pending' | 'approved' | 'rejected'
   actionTime?: string
   rejectReason?: string
+  approverName?: string
 }
 
 interface ApiLeaveRequest {
@@ -722,6 +728,7 @@ interface ApiLeaveRequest {
   total_days: number
   reason: string
   status: 'pending' | 'approved' | 'rejected'
+  approved_by?: string
   approved_at?: string
   reject_reason?: string
   updated_at: string
@@ -846,6 +853,7 @@ const toLeaveTypeKey = (leaveTypeName?: string): LeaveRequest['type'] => {
 
 const mapLeaveRequest = (item: ApiLeaveRequest): LeaveRequest => {
   const member = memberMap.value[item.member_id]
+  const approver = item.approved_by ? memberMap.value[item.approved_by] : undefined
   const leaveType = leaveTypeMap.value[item.leave_type_id]
   const typeKey = toLeaveTypeKey(leaveType?.name)
   const dateString = item.start_date === item.end_date
@@ -867,6 +875,7 @@ const mapLeaveRequest = (item: ApiLeaveRequest): LeaveRequest => {
     status: item.status,
     actionTime: item.approved_at ? formatDisplayDateTime(item.approved_at) : formatDisplayDateTime(item.updated_at),
     rejectReason: item.reject_reason,
+    approverName: approver ? `${approver.firstname || ''} ${approver.lastname || ''}`.trim() : '-',
   }
 }
 
@@ -1022,8 +1031,11 @@ const closeDetailModal = () => {
 const updateLeaveStatus = async (id: string, status: 'approved' | 'rejected', rejectReason = '') => {
   isActionLoading.value = true
   try {
+    const token = import.meta.client ? localStorage.getItem('smartleave:access_token') : ''
+
     await $fetch(`${BASE}/leave-request/${id}`, {
       method: 'PATCH',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: {
         status,
         reject_reason: rejectReason,

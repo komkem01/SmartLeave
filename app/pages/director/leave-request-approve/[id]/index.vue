@@ -37,12 +37,12 @@
           <p class="text-xs text-blue-700 font-semibold mt-1">หน้านี้ต้องแสดงข้อมูลจากฟอร์มกรอกใบลาครบทุกช่อง</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <NuxtLink
+          <!-- <NuxtLink
             to="/director/leave-type"
             class="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
           >
             จัดการประเภทการลา
-          </NuxtLink>
+          </NuxtLink> -->
           <NuxtLink
             to="/director/leave-request-approve"
             class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
@@ -131,7 +131,7 @@
                   </div>
 
                   <div>
-                    ข้าพเจ้าได้ลาได้ลา ○ป่วย ○กิจส่วนตัว ○คลอดบุตร ครั้งสุดท้าย ตั้งแต่วันที่ ............ ถึงวันที่ ............ มีกำหนด ............ วัน
+                    ข้าพเจ้าได้ลา ○ ป่วย ○ กิจส่วนตัว ○ คลอดบุตร ครั้งสุดท้าย ตั้งแต่วันที่ ............ ถึงวันที่ ............ มีกำหนด ............ วัน
                   </div>
 
                   <div>
@@ -208,7 +208,8 @@
           <section class="p-6 space-y-4">
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p class="text-xs text-slate-500">เลขที่คำร้อง</p>
-              <p class="text-base font-bold text-slate-900">#S-{{ leaveRequest.id }}</p>
+              <p class="text-base font-bold text-slate-900">{{ formattedRequestNumber }}</p>
+              <p class="text-3xs text-slate-400 mt-1">อ้างอิงระบบ: {{ leaveRequest.id }}</p>
             </div>
 
             <div class="rounded-xl border border-slate-200 p-4">
@@ -268,15 +269,15 @@
               <div class="rounded-xl border border-slate-200 p-4 sm:col-span-2">
                 <p class="text-xs text-slate-500">ข้อมูลจากแบบฟอร์มใบลา (ครบทุกช่อง)</p>
                 <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <p><span class="text-slate-500">อีเมล:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.email }}</span></p>
-                  <p><span class="text-slate-500">ตำแหน่ง:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.position }}</span></p>
-                  <p><span class="text-slate-500">วันที่เริ่มลา:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.startDate }}</span></p>
-                  <p><span class="text-slate-500">วันที่สิ้นสุดลา:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.endDate }}</span></p>
-                  <p class="sm:col-span-2"><span class="text-slate-500">สถานที่:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.location }}</span></p>
-                  <p><span class="text-slate-500">จังหวัด:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.province }}</span></p>
-                  <p><span class="text-slate-500">อำเภอ/เขต:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.district }}</span></p>
-                  <p><span class="text-slate-500">ตำบล/แขวง:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.subDistrict }}</span></p>
-                  <p><span class="text-slate-500">รหัสไปรษณีย์:</span> <span class="font-semibold text-slate-900">{{ leaveRequest.zipcode }}</span></p>
+                  <p><span class="text-slate-500">อีเมล :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.email }}</span></p>
+                  <p><span class="text-slate-500">ตำแหน่ง :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.position }}</span></p>
+                  <p><span class="text-slate-500">วันที่เริ่มลา :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.startDate }}</span></p>
+                  <p><span class="text-slate-500">วันที่สิ้นสุดลา :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.endDate }}</span></p>
+                  <p class="sm:col-span-2"><span class="text-slate-500">สถานที่ :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.location }}</span></p>
+                  <p><span class="text-slate-500">จังหวัด :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.province }}</span></p>
+                  <p><span class="text-slate-500">อำเภอ/เขต :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.district }}</span></p>
+                  <p><span class="text-slate-500">ตำบล/แขวง :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.subDistrict }}</span></p>
+                  <p><span class="text-slate-500">รหัสไปรษณีย์ :</span> <span class="font-semibold text-slate-900">{{ leaveRequest.zipcode }}</span></p>
                 </div>
               </div>
               <div class="rounded-xl border border-slate-200 p-4 sm:col-span-2">
@@ -285,14 +286,30 @@
               </div>
               <div class="rounded-xl border border-slate-200 p-4 sm:col-span-2">
                 <p class="text-xs text-slate-500">ไฟล์แนบ</p>
-                <p class="font-semibold text-slate-900">{{ leaveRequest.attachmentUrl || 'ไม่มีไฟล์แนบ' }}</p>
+                <a
+                  v-if="leaveRequest.attachmentUrl"
+                  :href="leaveRequest.attachmentUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="font-semibold text-blue-700 underline"
+                >
+                  เปิดไฟล์แนบ
+                </a>
+                <p v-else class="font-semibold text-slate-900">ไม่มีไฟล์แนบ</p>
               </div>
               <div class="rounded-xl border border-slate-200 p-4 sm:col-span-2">
                 <p class="text-xs text-slate-500">เอกสารแนบเพิ่มเติม</p>
                 <div v-if="leaveRequest.attachmentUrl" class="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
-                  <p class="text-xs text-slate-700">ชื่อไฟล์: <span class="font-semibold text-slate-900">{{ leaveRequest.attachmentUrl }}</span></p>
+                  <p class="text-xs text-slate-700">เอกสารแนบถูกอัปโหลดแล้ว</p>
                   <div class="rounded-md bg-white border border-slate-200 p-3 text-xs text-slate-600">
-                    พรีวิวไฟล์แนบ (จำลอง): {{ leaveRequest.attachmentUrl }}
+                    <a
+                      :href="leaveRequest.attachmentUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="font-semibold text-blue-700 underline"
+                    >
+                      คลิกเพื่อเปิดพรีวิวไฟล์แนบ
+                    </a>
                   </div>
                 </div>
                 <p v-else class="mt-2 text-xs text-slate-500">ไม่มีไฟล์แนบเพิ่มเติม</p>
@@ -447,6 +464,7 @@ interface ApiLeaveRequest {
   id: string
   member_id: string
   leave_type_id: string
+  attachment_url?: string
   start_date: string
   end_date: string
   total_days: number
@@ -469,11 +487,6 @@ interface ApiMember {
   district_id: string
   sub_district_id: string
   zipcode_id: string
-}
-
-interface ApiNameItem {
-  id: string
-  name: string
 }
 
 interface ApiCurrentUser {
@@ -512,10 +525,18 @@ const headerInitials = computed(() => {
   return `${first.charAt(0)}${last.charAt(0)}`.trim() || 'ผอ'
 })
 
+const formattedRequestNumber = computed(() => {
+  const id = leaveRequest.value?.id || ''
+  const compact = id.replace(/-/g, '').toUpperCase()
+  if (!compact) return '-'
+  if (compact.length < 8) return `LR-${compact}`
+  return `LR-${compact.slice(0, 4)}-${compact.slice(4, 8)}`
+})
+
 const formatDateShort = (dateText: string) => {
   const d = new Date(dateText)
   if (Number.isNaN(d.getTime())) return dateText
-  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}`
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear() + 543}`
 }
 
 const formatDateLongThai = (dateText: string) => {
@@ -529,7 +550,7 @@ const formatDateTimeShort = (dateText: string) => {
   if (Number.isNaN(d.getTime())) return dateText
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}, ${hh}:${mm} น.`
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear() + 543}, ${hh}:${mm} น.`
 }
 
 const toLeaveTypeKey = (leaveTypeName?: string): LeaveRequest['type'] => {
@@ -615,7 +636,7 @@ const loadLeaveRequest = async () => {
     subDistrict: subDistrictName,
     zipcode: zipcodeName,
     reason: lr.reason,
-    attachmentUrl: '',
+    attachmentUrl: lr.attachment_url || '',
     status: lr.status,
     actionTime: formatDateTimeShort(lr.updated_at),
     rejectReason: lr.reject_reason,
@@ -693,8 +714,10 @@ const approveRequest = async () => {
   if (!leaveRequest.value || leaveRequest.value.status !== 'pending') return
   isActionLoading.value = true
   try {
+    const token = import.meta.client ? localStorage.getItem('smartleave:access_token') : ''
     await $fetch(`${BASE}/leave-request/${leaveRequest.value.id}`, {
       method: 'PATCH',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: { status: 'approved' },
     })
     await loadLeaveRequest()
@@ -742,8 +765,10 @@ const submitReject = async () => {
 
   isActionLoading.value = true
   try {
+    const token = import.meta.client ? localStorage.getItem('smartleave:access_token') : ''
     await $fetch(`${BASE}/leave-request/${leaveRequest.value.id}`, {
       method: 'PATCH',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: {
         status: 'rejected',
         reject_reason: rejectReason.value.trim(),

@@ -1,9 +1,33 @@
 <template>
-  <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-10 font-sans antialiased">
-    <div class="w-full max-w-7xl mx-auto">
-      <div class="mb-4 flex justify-end">
-        <AppLogoutButton />
+  <div class="min-h-screen bg-slate-50 font-sans antialiased">
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-lg font-bold text-slate-950 leading-tight">SmartLeave</p>
+            <p class="text-3xs font-semibold text-slate-500 tracking-wider uppercase">แดชบอร์ดครูผู้สอน</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="text-right hidden sm:block">
+            <p class="text-sm font-bold text-slate-800">{{ profile.fullName }}</p>
+            <p class="text-3xs text-slate-500">{{ profile.department }}</p>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-slate-700">
+            {{ profileInitials }}
+          </div>
+          <AppLogoutButton />
+        </div>
       </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/20 mb-4">
@@ -43,27 +67,23 @@
             <h2 class="text-sm font-bold text-slate-900 mb-3">2) ประเภทการลา</h2>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
               <div class="lg:col-span-2">
-                <select
+                <AppDropdown
+                  id="leaveType"
                   v-model="form.type"
-                  required
-                  class="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="" disabled>เลือกประเภทการลา</option>
-                  <option value="sick">ลาป่วย (Sick Leave)</option>
-                  <option value="personal">ลากิจ (Personal Leave)</option>
-                  <option value="vacation">ลาพักผ่อน (Vacation Leave)</option>
-                </select>
+                  placeholder="เลือกประเภทการลา"
+                  :options="leaveTypes.map((leaveType) => ({ label: leaveType.name, value: leaveType.id }))"
+                />
               </div>
 
               <div class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 flex flex-col justify-center">
                 <p class="text-2xs font-semibold text-blue-700">โควต้าคงเหลือ</p>
                 <p class="text-sm font-bold text-blue-900 mt-0.5">
-                  {{ form.type ? selectedTypeRemainingRequests : '-' }} ครั้ง
+                  {{ form.type ? selectedTypeRemainingRequests : '-' }} วัน
                 </p>
                 <p class="text-2xs text-blue-700/80 mt-1">
                   {{
                     form.type
-                      ? 'ในปีการศึกษานี้'
+                      ? 'อ้างอิงจากการตั้งค่าประเภทลา'
                       : 'กรุณาเลือกประเภทการลา'
                   }}
                 </p>
@@ -89,7 +109,7 @@
                   v-if="showStartCalendar"
                   class="absolute left-0 top-full z-30 mt-2 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
                 >
-                  <calendar-date class="w-full" :value="form.startDate" @change="onStartDateChange">
+                  <calendar-date class="w-full" locale="th-TH" :value="form.startDate" @change="onStartDateChange">
                     <svg aria-label="Previous" class="fill-current size-4" slot="previous" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
                     <svg aria-label="Next" class="fill-current size-4" slot="next" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
                     <calendar-month></calendar-month>
@@ -111,11 +131,61 @@
                   v-if="showEndCalendar"
                   class="absolute left-0 top-full z-30 mt-2 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
                 >
-                  <calendar-date class="w-full" :value="form.endDate" @change="onEndDateChange">
+                  <calendar-date class="w-full" locale="th-TH" :value="form.endDate" @change="onEndDateChange">
                     <svg aria-label="Previous" class="fill-current size-4" slot="previous" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.75 19.5 8.25 12l7.5-7.5"></path></svg>
                     <svg aria-label="Next" class="fill-current size-4" slot="next" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"></path></svg>
                     <calendar-month></calendar-month>
                   </calendar-date>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div>
+                <label class="block text-xs text-slate-700 mb-1">เวลาเริ่มลา</label>
+                <div class="rounded-xl border border-slate-300 bg-white p-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                  <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <AppDropdown
+                      id="startHour"
+                      v-model="startHourModel"
+                      placeholder="ชั่วโมง"
+                      :options="hourOptions"
+                      :page-size="8"
+                      :page-size-options="[8, 12, 24]"
+                    />
+                    <span class="text-sm font-bold text-slate-400">:</span>
+                    <AppDropdown
+                      id="startMinute"
+                      v-model="startMinuteModel"
+                      placeholder="นาที"
+                      :options="minuteOptions"
+                      :page-size="10"
+                      :page-size-options="[10, 20, 30, 60]"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs text-slate-700 mb-1">เวลาสิ้นสุดลา</label>
+                <div class="rounded-xl border border-slate-300 bg-white p-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                  <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <AppDropdown
+                      id="endHour"
+                      v-model="endHourModel"
+                      placeholder="ชั่วโมง"
+                      :options="hourOptions"
+                      :page-size="8"
+                      :page-size-options="[8, 12, 24]"
+                    />
+                    <span class="text-sm font-bold text-slate-400">:</span>
+                    <AppDropdown
+                      id="endMinute"
+                      v-model="endMinuteModel"
+                      placeholder="นาที"
+                      :options="minuteOptions"
+                      :page-size="10"
+                      :page-size-options="[10, 20, 30, 60]"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -136,46 +206,34 @@
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select
+                <AppDropdown
+                  id="province"
                   v-model="form.province"
-                  required
-                  class="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                  @change="onProvinceChange"
-                >
-                  <option value="" disabled>เลือกจังหวัด</option>
-                  <option v-for="province in mockProvinces" :key="province.name" :value="province.name">
-                    {{ province.name }}
-                  </option>
-                </select>
+                  placeholder="เลือกจังหวัด"
+                  :page-size="20"
+                  :allow-page-size-select="true"
+                  :page-size-options="[10, 20, 30, 50]"
+                  :options="provinces.map((province) => ({ label: province.name, value: province.id }))"
+                />
 
-                <select
+                <AppDropdown
+                  id="district"
                   v-model="form.district"
-                  required
-                  :disabled="!form.province"
-                  class="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                  @change="onDistrictChange"
-                >
-                  <option value="" disabled>เลือกอำเภอ/เขต</option>
-                  <option v-for="district in availableDistricts" :key="district.name" :value="district.name">
-                    {{ district.name }}
-                  </option>
-                </select>
+                  placeholder="เลือกอำเภอ/เขต"
+                  :disabled="!form.province || districts.length === 0"
+                  :options="districts.map((district) => ({ label: district.name, value: district.id }))"
+                />
 
-                <select
+                <AppDropdown
+                  id="subDistrict"
                   v-model="form.subDistrict"
-                  required
-                  :disabled="!form.district"
-                  class="block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-                  @change="onSubDistrictChange"
-                >
-                  <option value="" disabled>เลือกตำบล/แขวง</option>
-                  <option v-for="subDistrict in availableSubDistricts" :key="subDistrict.name" :value="subDistrict.name">
-                    {{ subDistrict.name }}
-                  </option>
-                </select>
+                  placeholder="เลือกตำบล/แขวง"
+                  :disabled="!form.district || subDistricts.length === 0"
+                  :options="subDistricts.map((subDistrict) => ({ label: subDistrict.name, value: subDistrict.id }))"
+                />
                 <div class="w-full">
                 <input
-                  v-model="form.zipcode"
+                  :value="form.zipcodeName"
                   type="text"
                   readonly
                   placeholder="รหัสไปรษณีย์"
@@ -198,7 +256,7 @@
           </section>
 
           <section>
-            <h2 class="text-sm font-bold text-slate-900 mb-3">6) เอกสาร/ไฟล์แนบ</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-3">6) เอกสาร/ไฟล์แนบ (ไม่บังคับ)</h2>
             <div
               class="flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-2xl hover:border-blue-400 transition-colors duration-200 cursor-pointer"
               :class="{ 'border-rose-300 bg-rose-50/20': errors.attachment }"
@@ -213,7 +271,17 @@
                   <p class="pl-1">หรือคลิกเลือกจากเครื่อง</p>
                 </div>
                 <p class="text-xs text-slate-400">PNG, JPG, PDF ขนาดไม่เกิน 5MB</p>
+                <p v-if="isUploadingAttachment" class="text-xs text-blue-600 font-semibold mt-2">กำลังอัปโหลดไฟล์...</p>
                 <p v-if="fileName" class="text-xs text-emerald-600 font-bold mt-2">✓ {{ fileName }}</p>
+                <a
+                  v-if="uploadedPresignedURL"
+                  :href="uploadedPresignedURL"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-block text-xs text-blue-700 font-semibold underline mt-1"
+                >
+                  ดูไฟล์ที่อัปโหลด
+                </a>
               </div>
               <input
                 ref="fileInput"
@@ -250,12 +318,12 @@
           </div>
         </form>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 useHead({
@@ -268,99 +336,190 @@ useHead({
 })
 
 const router = useRouter()
+const config = useRuntimeConfig()
+const BASE = config.public.BASE_API as string
 const { addToast } = useToast()
 
 const isLoading = ref(false)
+const isUploadingAttachment = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const fileName = ref('')
 const showStartCalendar = ref(false)
 const showEndCalendar = ref(false)
+const authToken = ref('')
+const uploadedRefID = ref('')
+const uploadedPresignedURL = ref('')
+const STORAGE_UPLOAD_URL = 'https://storages-production.up.railway.app/api/v1/storages/upload'
+const STORAGE_BASE_URL = 'https://storages-production.up.railway.app/api/v1/storages'
+
+interface Item {
+  id: string
+  name: string
+  is_active?: boolean
+}
+
+interface ApiCurrentUser {
+  id: string
+  firstname?: string
+  lastname?: string
+  role?: string
+  department?: string
+  email?: string
+}
+
+interface ApiLeaveType {
+  id: string
+  name: string
+  max_days: number
+  is_active?: boolean
+}
+
+interface ApiLeaveRequest {
+  id: string
+  member_id: string
+  leave_type_id: string
+  total_days: number
+  status: 'pending' | 'approved' | 'rejected'
+}
+
+const currentUser = ref<ApiCurrentUser | null>(null)
+const leaveTypes = ref<ApiLeaveType[]>([])
+const provinces = ref<Item[]>([])
+const districts = ref<Item[]>([])
+const subDistricts = ref<Item[]>([])
+const zipcodes = ref<Item[]>([])
+const myLeaveRequests = ref<ApiLeaveRequest[]>([])
 
 const profile = ref({
-  fullName: 'ครูสมชาย สายสอน',
+  fullName: '-',
   position: 'ครู',
-  department: 'กลุ่มสาระวิทยาศาสตร์ฯ',
-  email: 'somchai@saard.ac.th'
+  department: '-',
+  email: '-'
+})
+
+const profileInitials = computed(() => {
+  const text = (profile.value.fullName || '').trim()
+  if (!text || text === '-') return 'คร'
+  const parts = text.split(/\s+/).filter(Boolean)
+  if (parts.length === 1) {
+    return parts[0]?.slice(0, 2) || 'คร'
+  }
+  const first = parts[0]?.charAt(0) || ''
+  const second = parts[1]?.charAt(0) || ''
+  return `${first}${second}` || 'คร'
+})
+
+const getTodayLocalDate = () => {
+  const now = new Date()
+  const yyyy = String(now.getFullYear())
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+const getCurrentTime = () => {
+  const now = new Date()
+  const hh = String(now.getHours()).padStart(2, '0')
+  const mm = String(now.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
+const getOneHourLaterTime = () => {
+  const later = new Date(Date.now() + 60 * 60 * 1000)
+  const hh = String(later.getHours()).padStart(2, '0')
+  const mm = String(later.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
+const defaultLeaveDate = getTodayLocalDate()
+const defaultStartTime = getCurrentTime()
+const defaultEndTime = getOneHourLaterTime()
+
+const hourOptions = Array.from({ length: 24 }, (_, hour) => {
+  const value = String(hour).padStart(2, '0')
+  return { label: value, value }
+})
+
+const minuteOptions = Array.from({ length: 60 }, (_, minute) => {
+  const value = String(minute).padStart(2, '0')
+  return { label: value, value }
 })
 
 const form = ref({
   type: '',
-  startDate: '',
-  endDate: '',
+  startDate: defaultLeaveDate,
+  endDate: defaultLeaveDate,
+  startTime: defaultStartTime,
+  endTime: defaultEndTime,
   location: '',
   province: '',
   district: '',
   subDistrict: '',
   zipcode: '',
+  zipcodeName: '',
   reason: '',
   attachment: null as File | null
 })
 
-interface SubDistrict {
-  name: string
-  zipcode: string
+const normalizeTime = (timeText: string, fallback = '00:00') => {
+  const [hourRaw, minuteRaw] = (timeText || fallback).split(':')
+  const hour = String(Number(hourRaw || 0)).padStart(2, '0')
+  const minute = String(Number(minuteRaw || 0)).padStart(2, '0')
+  return `${hour}:${minute}`
 }
 
-interface District {
-  name: string
-  subDistricts: SubDistrict[]
-}
-
-interface Province {
-  name: string
-  districts: District[]
-}
-
-const mockProvinces: Province[] = [
-  {
-    name: 'กรุงเทพมหานคร',
-    districts: [
-      {
-        name: 'เขตพระนคร',
-        subDistricts: [{ name: 'พระบรมมหาราชวัง', zipcode: '10200' }, { name: 'วังบูรพาภิรมย์', zipcode: '10200' }]
-      },
-      {
-        name: 'เขตปทุมวัน',
-        subDistricts: [{ name: 'ลุมพินี', zipcode: '10330' }, { name: 'รองเมือง', zipcode: '10330' }]
-      }
-    ]
+const startHourModel = computed({
+  get: () => normalizeTime(form.value.startTime).split(':')[0] || '00',
+  set: (hour: string) => {
+    const minute = normalizeTime(form.value.startTime).split(':')[1] || '00'
+    form.value.startTime = `${hour}:${minute}`
+    validateDateRange()
   },
-  {
-    name: 'ชลบุรี',
-    districts: [
-      {
-        name: 'เมืองชลบุรี',
-        subDistricts: [{ name: 'บางแสน', zipcode: '20130' }, { name: 'มะขามหย่ง', zipcode: '20000' }]
-      },
-      {
-        name: 'บางละมุง',
-        subDistricts: [{ name: 'หนองปรือ', zipcode: '20150' }, { name: 'นาเกลือ', zipcode: '20150' }]
-      }
-    ]
+})
+
+const startMinuteModel = computed({
+  get: () => normalizeTime(form.value.startTime).split(':')[1] || '00',
+  set: (minute: string) => {
+    const hour = normalizeTime(form.value.startTime).split(':')[0] || '00'
+    form.value.startTime = `${hour}:${minute}`
+    validateDateRange()
+  },
+})
+
+const endHourModel = computed({
+  get: () => normalizeTime(form.value.endTime).split(':')[0] || '00',
+  set: (hour: string) => {
+    const minute = normalizeTime(form.value.endTime).split(':')[1] || '00'
+    form.value.endTime = `${hour}:${minute}`
+    validateDateRange()
+  },
+})
+
+const endMinuteModel = computed({
+  get: () => normalizeTime(form.value.endTime).split(':')[1] || '00',
+  set: (minute: string) => {
+    const hour = normalizeTime(form.value.endTime).split(':')[0] || '00'
+    form.value.endTime = `${hour}:${minute}`
+    validateDateRange()
+  },
+})
+
+const usedDaysByLeaveType = computed<Record<string, number>>(() => {
+  const usage: Record<string, number> = {}
+  for (const item of myLeaveRequests.value) {
+    if (item.status === 'rejected') continue
+    usage[item.leave_type_id] = (usage[item.leave_type_id] || 0) + Number(item.total_days || 0)
   }
-]
-
-const availableDistricts = computed<District[]>(() => {
-  if (!form.value.province) return []
-  const selectedProvince = mockProvinces.find((province) => province.name === form.value.province)
-  return selectedProvince ? selectedProvince.districts : []
+  return usage
 })
-
-const availableSubDistricts = computed<SubDistrict[]>(() => {
-  if (!form.value.district) return []
-  const selectedDistrict = availableDistricts.value.find((district) => district.name === form.value.district)
-  return selectedDistrict ? selectedDistrict.subDistricts : []
-})
-
-const remainingRequestQuota = {
-  sick: 10,
-  personal: 7,
-  vacation: 4
-}
 
 const selectedTypeRemainingRequests = computed(() => {
   if (!form.value.type) return 0
-  return remainingRequestQuota[form.value.type as keyof typeof remainingRequestQuota] ?? 0
+  const selectedType = leaveTypes.value.find((item) => item.id === form.value.type)
+  if (!selectedType) return 0
+  const maxDays = Number(selectedType.max_days || 0)
+  const usedDays = usedDaysByLeaveType.value[selectedType.id] || 0
+  return Number(Math.max(0, maxDays - usedDays).toFixed(1))
 })
 
 const errors = ref({
@@ -371,13 +530,18 @@ const errors = ref({
 const validateDateRange = () => {
   errors.value.dateRange = ''
 
-  if (!form.value.startDate || !form.value.endDate) return
+  if (!form.value.startDate || !form.value.endDate || !form.value.startTime || !form.value.endTime) return
 
-  const start = new Date(form.value.startDate)
-  const end = new Date(form.value.endDate)
+  const start = new Date(`${form.value.startDate}T${form.value.startTime}:00`)
+  const end = new Date(`${form.value.endDate}T${form.value.endTime}:00`)
 
-  if (start > end) {
-    errors.value.dateRange = 'วันที่สิ้นสุดลาต้องไม่น้อยกว่าวันที่เริ่มลา'
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    errors.value.dateRange = 'รูปแบบวันที่หรือเวลาไม่ถูกต้อง'
+    return
+  }
+
+  if (start >= end) {
+    errors.value.dateRange = 'วันและเวลาสิ้นสุดลาต้องมากกว่าวันและเวลาเริ่มลา'
   }
 }
 
@@ -433,29 +597,123 @@ const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-const onProvinceChange = () => {
+const getAuthHeaders = () => {
+  if (!authToken.value) return undefined
+  return { Authorization: `Bearer ${authToken.value}` }
+}
+
+const fetchPresignedURL = async (id: string) => {
+  const res = await $fetch<any>(`${STORAGE_BASE_URL}/${id}/presign`)
+  return (res?.data?.presigned_url || '') as string
+}
+
+const fetchDistricts = async (provinceID: string) => {
+  if (!provinceID) {
+    districts.value = []
+    return
+  }
+
+  try {
+    const res = await $fetch<any>(`${BASE}/system/district?province_id=${provinceID}`, {
+      headers: getAuthHeaders(),
+    })
+    districts.value = (res?.data ?? []).filter((item: Item) => item.is_active !== false)
+  } catch {
+    districts.value = []
+  }
+}
+
+const fetchSubDistricts = async (districtID: string) => {
+  if (!districtID) {
+    subDistricts.value = []
+    return
+  }
+
+  try {
+    const res = await $fetch<any>(`${BASE}/system/sub-district?district_id=${districtID}`, {
+      headers: getAuthHeaders(),
+    })
+    subDistricts.value = (res?.data ?? []).filter((item: Item) => item.is_active !== false)
+  } catch {
+    subDistricts.value = []
+  }
+}
+
+const fetchZipcodes = async (subDistrictID: string) => {
+  if (!subDistrictID) {
+    zipcodes.value = []
+    return
+  }
+
+  try {
+    const res = await $fetch<any>(`${BASE}/system/zipcode?sub_district_id=${subDistrictID}`, {
+      headers: getAuthHeaders(),
+    })
+    zipcodes.value = (res?.data ?? []).filter((item: Item) => item.is_active !== false)
+
+    if (zipcodes.value.length > 0) {
+      const first = zipcodes.value[0]
+      if (first) {
+        form.value.zipcode = first.id
+        form.value.zipcodeName = first.name
+      }
+    }
+  } catch {
+    zipcodes.value = []
+  }
+}
+
+const onProvinceChange = async () => {
   form.value.district = ''
   form.value.subDistrict = ''
   form.value.zipcode = ''
+  form.value.zipcodeName = ''
+  districts.value = []
+  subDistricts.value = []
+  zipcodes.value = []
+  await fetchDistricts(form.value.province)
 }
 
-const onDistrictChange = () => {
+const onDistrictChange = async () => {
   form.value.subDistrict = ''
   form.value.zipcode = ''
+  form.value.zipcodeName = ''
+  subDistricts.value = []
+  zipcodes.value = []
+  await fetchSubDistricts(form.value.district)
 }
 
-const onSubDistrictChange = () => {
-  const selected = availableSubDistricts.value.find((subDistrict) => subDistrict.name === form.value.subDistrict)
-  form.value.zipcode = selected ? selected.zipcode : ''
+const onSubDistrictChange = async () => {
+  form.value.zipcode = ''
+  form.value.zipcodeName = ''
+  zipcodes.value = []
+  await fetchZipcodes(form.value.subDistrict)
 }
 
-const handleFileUpload = (event: Event) => {
+watch(() => form.value.province, async (provinceID, prevProvinceID) => {
+  if (provinceID === prevProvinceID) return
+  await onProvinceChange()
+})
+
+watch(() => form.value.district, async (districtID, prevDistrictID) => {
+  if (districtID === prevDistrictID) return
+  await onDistrictChange()
+})
+
+watch(() => form.value.subDistrict, async (subDistrictID, prevSubDistrictID) => {
+  if (subDistrictID === prevSubDistrictID) return
+  await onSubDistrictChange()
+})
+
+const handleFileUpload = async (event: Event) => {
   errors.value.attachment = ''
   const target = event.target as HTMLInputElement
 
   if (!target.files || target.files.length === 0) return
 
   const file = target.files[0]
+  if (!file) return
+
   if (file.size > 5 * 1024 * 1024) {
     errors.value.attachment = 'ขนาดไฟล์ต้องไม่เกิน 5MB'
     return
@@ -463,11 +721,50 @@ const handleFileUpload = (event: Event) => {
 
   form.value.attachment = file
   fileName.value = file.name
+  uploadedRefID.value = ''
+  uploadedPresignedURL.value = ''
+
+  const formData = new FormData()
+  formData.append('file', file)
+
+  isUploadingAttachment.value = true
+  try {
+    const res = await $fetch<any>(STORAGE_UPLOAD_URL, {
+      method: 'POST',
+      body: formData,
+    })
+
+    const refID = res?.data?.id || ''
+    if (!refID) {
+      throw new Error('upload-id-not-found')
+    }
+    uploadedRefID.value = refID
+    uploadedPresignedURL.value = await fetchPresignedURL(refID)
+  } catch {
+    form.value.attachment = null
+    fileName.value = ''
+    uploadedRefID.value = ''
+    uploadedPresignedURL.value = ''
+    errors.value.attachment = 'อัปโหลดไฟล์ไม่สำเร็จ กรุณาลองใหม่'
+    addToast('error', 'อัปโหลดไฟล์ไม่สำเร็จ', 'ไม่สามารถอัปโหลดไฟล์แนบได้ กรุณาลองใหม่')
+  } finally {
+    isUploadingAttachment.value = false
+  }
 }
 
 const handleSubmit = async () => {
+  if (!form.value.type) {
+    addToast('warning', 'ข้อมูลไม่ครบ', 'กรุณาเลือกประเภทการลา')
+    return
+  }
+
   if (!form.value.startDate || !form.value.endDate) {
     addToast('warning', 'ข้อมูลไม่ครบ', 'กรุณาเลือกวันที่เริ่มลาและวันที่สิ้นสุดลา')
+    return
+  }
+
+  if (!form.value.startTime || !form.value.endTime) {
+    addToast('warning', 'ข้อมูลไม่ครบ', 'กรุณาเลือกเวลาเริ่มลาและเวลาสิ้นสุดลา')
     return
   }
 
@@ -482,19 +779,44 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!form.value.attachment) {
-    errors.value.attachment = 'กรุณาแนบเอกสาร/ไฟล์ประกอบก่อนส่งคำร้อง'
-    addToast('warning', 'ข้อมูลไม่ครบ', errors.value.attachment)
+  if (isUploadingAttachment.value) {
+    addToast('warning', 'กำลังอัปโหลดไฟล์', 'กรุณารอให้อัปโหลดไฟล์เสร็จก่อนส่งคำร้อง')
     return
   }
 
+  const memberID = currentUser.value?.id || ''
+  if (!memberID) {
+    addToast('error', 'ไม่พบข้อมูลผู้ใช้', 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง')
+    return
+  }
+
+  const start = new Date(`${form.value.startDate}T${form.value.startTime}:00`)
+  const end = new Date(`${form.value.endDate}T${form.value.endTime}:00`)
+  const totalMinutes = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 60000))
+  const totalDays = Number((totalMinutes / 1440).toFixed(4))
+
   isLoading.value = true
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1200))
+    await $fetch(`${BASE}/leave-request`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: {
+        member_id: memberID,
+        leave_type_id: form.value.type,
+        start_date: form.value.startDate,
+        end_date: form.value.endDate,
+        start_at: `${form.value.startDate}T${form.value.startTime}:00`,
+        end_at: `${form.value.endDate}T${form.value.endTime}:00`,
+        total_days: totalDays,
+        reason: form.value.reason,
+        ...(uploadedRefID.value ? { ref_id: uploadedRefID.value } : {}),
+      },
+    })
+
     addToast('success', 'ยื่นคำขอสำเร็จ', 'ระบบบันทึกใบคำขอลาและส่งต่อให้ผู้อำนวยการแล้ว')
     router.push('/teacher/dashboard')
   }
-  catch (error) {
+  catch {
     addToast('error', 'ส่งคำขอไม่สำเร็จ', 'ไม่สามารถบันทึกใบคำขอได้ในขณะนี้ กรุณาลองใหม่')
   }
   finally {
@@ -502,7 +824,60 @@ const handleSubmit = async () => {
   }
 }
 
+const fetchPageData = async () => {
+  isLoading.value = true
+  try {
+    const token = import.meta.client ? localStorage.getItem('smartleave:access_token') : null
+    if (!token) {
+      addToast('warning', 'ไม่พบโทเค็นเข้าสู่ระบบ', 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง')
+      router.push('/login')
+      return
+    }
+    authToken.value = token
+
+    const meRes = await $fetch<any>(`${BASE}/member/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const me = (meRes?.data ?? null) as ApiCurrentUser | null
+    if (!me) {
+      addToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่พบข้อมูลผู้ใช้งาน')
+      return
+    }
+
+    currentUser.value = me
+    profile.value = {
+      fullName: `${me.firstname || ''} ${me.lastname || ''}`.trim() || '-',
+      position: me.role === 'director' ? 'ผู้อำนวยการ' : 'ครู',
+      department: me.department || '-',
+      email: me.email || '-',
+    }
+
+    const [leaveTypeRes, provinceRes, leaveReqRes] = await Promise.all([
+      $fetch<any>(`${BASE}/system/leave-type`, { headers: getAuthHeaders() }),
+      $fetch<any>(`${BASE}/system/province`, { headers: getAuthHeaders() }),
+      $fetch<any>(`${BASE}/leave-request`, { headers: getAuthHeaders() }),
+    ])
+
+    leaveTypes.value = (leaveTypeRes?.data ?? []).filter((item: ApiLeaveType) => item.is_active !== false)
+    provinces.value = (provinceRes?.data ?? []).filter((item: Item) => item.is_active !== false)
+
+    const allLeaveRequests = (leaveReqRes?.data ?? []) as ApiLeaveRequest[]
+    myLeaveRequests.value = allLeaveRequests.filter((item) => item.member_id === me.id)
+  } catch {
+    addToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถโหลดข้อมูลแบบฟอร์มขอลาได้ กรุณาลองใหม่')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 const goBack = () => {
   router.push('/teacher/dashboard')
 }
+
+onMounted(() => {
+  fetchPageData()
+})
 </script>

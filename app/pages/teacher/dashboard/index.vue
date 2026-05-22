@@ -16,11 +16,11 @@
 
         <div class="flex items-center gap-3">
           <div class="text-right hidden sm:block">
-            <p class="text-sm font-bold text-slate-800">ครูสมชาย สายสอน</p>
-            <p class="text-3xs text-slate-500">กลุ่มสาระวิทยาศาสตร์ฯ</p>
+            <p class="text-sm font-bold text-slate-800">{{ profileFullName }}</p>
+            <p class="text-3xs text-slate-500">{{ profileDepartment }}</p>
           </div>
           <div class="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-slate-700">
-            สช
+            {{ profileInitials }}
           </div>
           <AppLogoutButton />
         </div>
@@ -28,13 +28,17 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+      <div v-if="isLoading" class="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+        กำลังโหลดข้อมูลแดชบอร์ดครู...
+      </div>
+
       <section class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-extrabold text-slate-950">สวัสดีครับ, คุณครูสมชาย</h1>
-          <p class="text-sm text-slate-500 mt-1">ปีการศึกษา {{ academicYear }} • โควต้าการลานับเป็นจำนวนครั้งต่อปีการศึกษา</p>
+          <h1 class="text-2xl font-extrabold text-slate-950">สวัสดีครับ, {{ greetingName }}</h1>
+          <p class="text-sm text-slate-500 mt-1">โควต้าการลาดึงจากการตั้งค่าประเภทลาในระบบ</p>
           <div class="mt-3 flex flex-wrap gap-2 text-xs">
-            <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">ใช้แล้ว {{ totalUsedRequests }} ครั้ง</span>
-            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">คงเหลือ {{ totalRemainingRequests }} ครั้ง</span>
+            <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">ใช้แล้ว {{ totalUsedRequests }} วัน</span>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">คงเหลือ {{ totalRemainingRequests }} วัน</span>
           </div>
         </div>
 
@@ -51,8 +55,8 @@
 
       <section>
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-slate-900">โควต้าการลา (ครั้ง/ปีการศึกษา)</h2>
-          <span class="text-xs text-slate-400">อิงตามกติกาโรงเรียน</span>
+          <h2 class="text-lg font-bold text-slate-900">โควต้าการลา (วัน)</h2>
+          <span class="text-xs text-slate-400">อิงตามการตั้งค่าประเภทลา (นับเฉพาะที่อนุมัติแล้ว)</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -63,12 +67,12 @@
           >
             <div class="flex items-center justify-between mb-3">
               <p class="text-sm font-bold text-slate-900">{{ policy.label }}</p>
-              <span class="text-xs px-2 py-0.5 rounded-full" :class="policy.badgeClass">{{ policy.usedRequests }}/{{ policy.maxRequests }} ครั้ง</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" :class="policy.badgeClass">{{ policy.usedRequests }}/{{ policy.maxRequests }} วัน</span>
             </div>
             <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div class="h-full rounded-full transition-all" :class="policy.barClass" :style="{ width: `${Math.min(100, (policy.usedRequests / policy.maxRequests) * 100)}%` }"></div>
+              <div class="h-full rounded-full transition-all" :class="policy.barClass" :style="{ width: `${policy.maxRequests > 0 ? Math.min(100, (policy.usedRequests / policy.maxRequests) * 100) : 0}%` }"></div>
             </div>
-            <p class="mt-3 text-xs text-slate-500">คงเหลือ {{ policy.maxRequests - policy.usedRequests }} ครั้ง</p>
+            <p class="mt-3 text-xs text-slate-500">คงเหลือ {{ Math.max(0, policy.maxRequests - policy.usedRequests) }} วัน</p>
           </div>
         </div>
       </section>
@@ -88,11 +92,12 @@
                 <th class="py-4 px-6">จำนวนวัน</th>
                 <th class="py-4 px-6">สถานะ</th>
                 <th class="py-4 px-6">ผู้พิจารณา</th>
+                <th class="py-4 px-6 text-right">รายละเอียด</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
               <tr v-for="req in paginatedTeacherRequests" :key="req.id" class="hover:bg-slate-50/50 transition-colors">
-                <td class="py-4 px-6 font-semibold text-slate-900">{{ getLeaveTypeLabel(req.type) }}</td>
+                <td class="py-4 px-6 font-semibold text-slate-900">{{ req.leaveTypeName }}</td>
                 <td class="py-4 px-6 text-slate-500">{{ req.dateString }}</td>
                 <td class="py-4 px-6 font-semibold">{{ req.totalDays }} วัน</td>
                 <td class="py-4 px-6">
@@ -107,6 +112,14 @@
                     <span class="text-3xs text-slate-400">{{ req.actionTime }}</span>
                   </div>
                   <span v-else class="text-slate-400 italic">รอพิจารณา</span>
+                </td>
+                <td class="py-4 px-6 text-right">
+                  <NuxtLink
+                    :to="`/teacher/leave-request/${req.id}`"
+                    class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    ดูรายละเอียด
+                  </NuxtLink>
                 </td>
               </tr>
             </tbody>
@@ -143,17 +156,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+
+const { addToast } = useToast()
+const config = useRuntimeConfig()
+const BASE = config.public.BASE_API
 
 definePageMeta({
   middleware: ['require-auth']
 })
 
-type LeaveType = 'sick' | 'personal' | 'vacation'
+type LeaveType = 'sick' | 'personal' | 'vacation' | 'other'
 type LeaveStatus = 'pending' | 'approved' | 'rejected'
 
 interface LeavePolicy {
-  type: LeaveType
+  type: string
   label: string
   maxRequests: number
   usedRequests: number
@@ -162,55 +179,82 @@ interface LeavePolicy {
 }
 
 interface TeacherRequest {
-  id: number
-  type: LeaveType
+  id: string
+  leaveTypeID: string
+  leaveTypeName: string
   dateString: string
   totalDays: number
   status: LeaveStatus
-  approvedBy: string
+  approvedBy: string | null
   actionTime: string
 }
 
-const academicYear = '2026'
+interface ApiCurrentUser {
+  id: string
+  firstname?: string
+  lastname?: string
+  department?: string
+  role?: string
+  email?: string
+}
 
-const leavePolicies = ref<LeavePolicy[]>([
-  { type: 'sick', label: 'ลาป่วย', maxRequests: 12, usedRequests: 2, badgeClass: 'bg-emerald-50 text-emerald-700', barClass: 'bg-emerald-500' },
-  { type: 'personal', label: 'ลากิจ', maxRequests: 8, usedRequests: 1, badgeClass: 'bg-amber-50 text-amber-700', barClass: 'bg-amber-500' },
-  { type: 'vacation', label: 'ลาพักผ่อน', maxRequests: 6, usedRequests: 2, badgeClass: 'bg-blue-50 text-blue-700', barClass: 'bg-blue-500' }
-])
+interface ApiLeaveRequest {
+  id: string
+  member_id: string
+  leave_type_id: string
+  start_date: string
+  end_date: string
+  total_days: number
+  reason: string
+  status: LeaveStatus
+  approved_by?: string
+  approved_at?: string
+  updated_at: string
+}
 
-const teacherRequests = ref<TeacherRequest[]>([
-  {
-    id: 1,
-    type: 'personal',
-    dateString: '18 พ.ค. 2569 - 19 พ.ค. 2569',
-    totalDays: 1.5,
-    status: 'approved',
-    approvedBy: 'ผอ.วันชัย ใจดี',
-    actionTime: '15 พ.ค. 2026, 09:30 น.'
-  },
-  {
-    id: 2,
-    type: 'sick',
-    dateString: '04 พ.ค. 2569 - 05 พ.ค. 2569',
-    totalDays: 2,
-    status: 'approved',
-    approvedBy: 'ผอ.วันชัย ใจดี',
-    actionTime: '02 พ.ค. 2026, 14:15 น.'
-  },
-  {
-    id: 3,
-    type: 'vacation',
-    dateString: '10 มี.ค. 2569 - 14 มี.ค. 2569',
-    totalDays: 4,
-    status: 'rejected',
-    approvedBy: 'ผอ.วันชัย ใจดี',
-    actionTime: '08 มี.ค. 2026, 11:00 น.'
-  }
-])
+interface ApiLeaveType {
+  id: string
+  name: string
+  max_days: number
+}
+
+interface ApiMember {
+  id: string
+  firstname?: string
+  lastname?: string
+}
+
+const isLoading = ref(false)
+
+const currentUser = ref<ApiCurrentUser | null>(null)
+const leaveTypeMap = ref<Record<string, ApiLeaveType>>({})
+const memberMap = ref<Record<string, ApiMember>>({})
+
+const leavePolicies = ref<LeavePolicy[]>([])
+
+const teacherRequests = ref<TeacherRequest[]>([])
 
 const pageSize = 5
 const currentPage = ref(1)
+
+const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+
+const profileFullName = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  return `${first} ${last}`.trim() || 'ครูผู้สอน'
+})
+
+const profileDepartment = computed(() => currentUser.value?.department || '-')
+
+const profileInitials = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  const initials = `${first.charAt(0)}${last.charAt(0)}`.trim()
+  return initials || 'คร'
+})
+
+const greetingName = computed(() => currentUser.value?.firstname?.trim() || 'คุณครู')
 
 const totalUsedRequests = computed(() => leavePolicies.value.reduce((sum, p) => sum + p.usedRequests, 0))
 const totalRemainingRequests = computed(() => leavePolicies.value.reduce((sum, p) => sum + (p.maxRequests - p.usedRequests), 0))
@@ -226,10 +270,136 @@ const paginationStart = computed(() => {
 })
 const paginationEnd = computed(() => Math.min(currentPage.value * pageSize, teacherRequests.value.length))
 
-const getLeaveTypeLabel = (type: LeaveType) => {
-  if (type === 'sick') return 'ลาป่วย'
-  if (type === 'personal') return 'ลากิจ'
-  return 'ลาพักผ่อน'
+const formatDate = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear() + 543}`
+}
+
+const formatDateTime = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear() + 543}, ${hh}:${mm} น.`
+}
+
+const policyColorPairs = [
+  { badgeClass: 'bg-emerald-50 text-emerald-700', barClass: 'bg-emerald-500' },
+  { badgeClass: 'bg-amber-50 text-amber-700', barClass: 'bg-amber-500' },
+  { badgeClass: 'bg-blue-50 text-blue-700', barClass: 'bg-blue-500' },
+  { badgeClass: 'bg-violet-50 text-violet-700', barClass: 'bg-violet-500' },
+  { badgeClass: 'bg-cyan-50 text-cyan-700', barClass: 'bg-cyan-500' },
+]
+
+const syncPolicyQuotaFromBackend = (leaveTypes: ApiLeaveType[]) => {
+  leavePolicies.value = leaveTypes.map((item, index) => {
+    const colors = policyColorPairs[index % policyColorPairs.length] || { badgeClass: 'bg-slate-100 text-slate-700', barClass: 'bg-slate-500' }
+    const maxDays = Number(item.max_days || 0)
+    return {
+      type: item.id,
+      label: item.name,
+      maxRequests: Number.isFinite(maxDays) && maxDays > 0 ? Math.floor(maxDays) : 0,
+      usedRequests: 0,
+      badgeClass: colors.badgeClass,
+      barClass: colors.barClass,
+    }
+  })
+}
+
+const mapRequest = (item: ApiLeaveRequest): TeacherRequest => {
+  const leaveTypeName = leaveTypeMap.value[item.leave_type_id]?.name || 'ไม่ระบุประเภท'
+  const approvedMember = item.approved_by ? memberMap.value[item.approved_by] : null
+  const approvedBy = approvedMember
+    ? `ผอ.${(approvedMember.firstname || '').trim()} ${(approvedMember.lastname || '').trim()}`.trim()
+    : null
+
+  return {
+    id: item.id,
+    leaveTypeID: item.leave_type_id,
+    leaveTypeName,
+    dateString: item.start_date === item.end_date
+      ? formatDate(item.start_date)
+      : `${formatDate(item.start_date)} - ${formatDate(item.end_date)}`,
+    totalDays: Number(item.total_days || 0),
+    status: item.status,
+    approvedBy,
+    actionTime: formatDateTime(item.approved_at || item.updated_at),
+  }
+}
+
+const updatePolicyUsage = () => {
+  const usedByType: Record<string, number> = {}
+
+  for (const item of teacherRequests.value) {
+    if (item.status !== 'approved') continue
+    usedByType[item.leaveTypeID] = (usedByType[item.leaveTypeID] || 0) + Number(item.totalDays || 0)
+  }
+
+  leavePolicies.value = leavePolicies.value.map((policy) => ({
+    ...policy,
+    usedRequests: Number((usedByType[policy.type] || 0).toFixed(1)),
+  }))
+}
+
+const fetchCurrentUser = async () => {
+  if (!import.meta.client) return
+
+  const token = localStorage.getItem('smartleave:access_token')
+  if (!token) return
+
+  const meRes = await $fetch<any>(`${BASE}/member/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  currentUser.value = (meRes?.data ?? null) as ApiCurrentUser | null
+}
+
+const fetchReferenceData = async () => {
+  const [leaveTypeRes, memberRes] = await Promise.all([
+    $fetch<any>(`${BASE}/system/leave-type`),
+    $fetch<any>(`${BASE}/member`),
+  ])
+
+  const leaveTypes = (leaveTypeRes?.data ?? []) as ApiLeaveType[]
+  const members = (memberRes?.data ?? []) as ApiMember[]
+
+  syncPolicyQuotaFromBackend(leaveTypes)
+
+  leaveTypeMap.value = leaveTypes.reduce<Record<string, ApiLeaveType>>((acc, item) => {
+    acc[item.id] = item
+    return acc
+  }, {})
+
+  memberMap.value = members.reduce<Record<string, ApiMember>>((acc, item) => {
+    acc[item.id] = item
+    return acc
+  }, {})
+}
+
+const fetchTeacherDashboard = async () => {
+  isLoading.value = true
+  try {
+    await fetchCurrentUser()
+    await fetchReferenceData()
+
+    const leaveRes = await $fetch<any>(`${BASE}/leave-request`)
+    const allRequests = (leaveRes?.data ?? []) as ApiLeaveRequest[]
+    const myId = currentUser.value?.id || ''
+
+    teacherRequests.value = allRequests
+      .filter((item) => item.member_id === myId)
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .map(mapRequest)
+
+    updatePolicyUsage()
+  } catch {
+    addToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถโหลดข้อมูลแดชบอร์ดครูได้ กรุณาลองใหม่')
+  } finally {
+    isLoading.value = false
+  }
 }
 
 watch(
@@ -270,6 +440,10 @@ const getStatusText = (status: LeaveStatus) => {
   if (status === 'rejected') return 'ไม่อนุมัติ'
   return 'รอพิจารณา'
 }
+
+onMounted(() => {
+  fetchTeacherDashboard()
+})
 </script>
 
 <style scoped>
