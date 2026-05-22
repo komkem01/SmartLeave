@@ -17,12 +17,13 @@
 
           <div class="flex items-center gap-3">
             <div class="hidden md:block text-right">
-              <p class="text-sm font-bold text-slate-800">ผอ.วันชัย ใจดี</p>
+              <p class="text-sm font-bold text-slate-800">{{ headerDisplayName }}</p>
               <p class="text-3xs text-slate-500 font-semibold tracking-wider uppercase">ผู้อำนวยการสถานศึกษา</p>
             </div>
             <div class="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-700">
-              วช
+              {{ headerInitials }}
             </div>
+            <AppLogoutButton />
           </div>
         </div>
       </div>
@@ -35,20 +36,32 @@
           <p class="text-sm text-slate-500 mt-1">แสดงข้อมูลทั้งหมดของใบคำร้องพร้อมไฟล์แนบ</p>
           <p class="text-xs text-blue-700 font-semibold mt-1">หน้านี้ต้องแสดงข้อมูลจากฟอร์มกรอกใบลาครบทุกช่อง</p>
         </div>
-        <NuxtLink
-          to="/director/leave-request-approve"
-          class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
-        >
-          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          กลับหน้ารายการใบลา
-        </NuxtLink>
+        <div class="flex flex-wrap items-center gap-2">
+          <NuxtLink
+            to="/director/leave-type"
+            class="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            จัดการประเภทการลา
+          </NuxtLink>
+          <NuxtLink
+            to="/director/leave-request-approve"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            กลับหน้ารายการใบลา
+          </NuxtLink>
+        </div>
       </div>
 
-      <div v-if="!leaveRequest" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center space-y-3">
+      <div v-if="isLoading" class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+        กำลังโหลดข้อมูลใบคำร้องจากระบบ...
+      </div>
+
+      <div v-else-if="!leaveRequest" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-10 text-center space-y-3">
         <h2 class="text-lg font-bold text-slate-900">ไม่พบข้อมูลใบคำร้อง</h2>
-        <p class="text-sm text-slate-500">รายการที่ต้องการอาจถูกลบหรือยังไม่มีอยู่ในระบบจำลอง</p>
+        <p class="text-sm text-slate-500">รายการที่ต้องการอาจถูกลบหรือยังไม่มีอยู่ในระบบ</p>
       </div>
 
       <div v-else class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -220,9 +233,10 @@
                 <button
                   type="button"
                   @click="openApproveConfirmModal"
+                  :disabled="isActionLoading"
                   class="w-full sm:w-1/2 rounded-xl px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
                 >
-                  อนุมัติ
+                    {{ isActionLoading ? 'กำลังบันทึก...' : 'อนุมัติ' }}
                 </button>
               </div>
               <p v-else class="text-xs text-slate-600">รายการนี้ดำเนินการแล้ว ไม่สามารถเปลี่ยนสถานะซ้ำได้</p>
@@ -327,9 +341,10 @@
               <button
                 type="button"
                 class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all"
+                :disabled="isActionLoading"
                 @click="confirmApprove"
               >
-                ยืนยันอนุมัติ
+                {{ isActionLoading ? 'กำลังบันทึก...' : 'ยืนยันอนุมัติ' }}
               </button>
             </div>
           </div>
@@ -382,9 +397,10 @@
               </button>
               <button
                 type="submit"
+                :disabled="isActionLoading"
                 class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs transition-all"
               >
-                ยืนยันไม่อนุมัติ
+                {{ isActionLoading ? 'กำลังบันทึก...' : 'ยืนยันไม่อนุมัติ' }}
               </button>
             </div>
           </form>
@@ -395,20 +411,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const route = useRoute()
 const { addToast } = useToast()
+const config = useRuntimeConfig()
+const BASE = config.public.BASE_API
 
 interface LeaveRequest {
-  id: number
+  id: string
   prefix: string
   firstName: string
   lastName: string
   position: string
   email: string
   department: string
-  type: 'sick' | 'personal' | 'vacation'
+  type: 'sick' | 'personal' | 'vacation' | 'other'
   startDate: string
   endDate: string
   dateString: string
@@ -425,131 +443,196 @@ interface LeaveRequest {
   rejectReason?: string
 }
 
+interface ApiLeaveRequest {
+  id: string
+  member_id: string
+  leave_type_id: string
+  start_date: string
+  end_date: string
+  total_days: number
+  reason: string
+  status: 'pending' | 'approved' | 'rejected'
+  approved_at?: string
+  reject_reason?: string
+  updated_at: string
+}
+
+interface ApiMember {
+  id: string
+  prefix_id: string
+  email: string
+  firstname: string
+  lastname: string
+  role: string
+  department: string
+  province_id: string
+  district_id: string
+  sub_district_id: string
+  zipcode_id: string
+}
+
+interface ApiNameItem {
+  id: string
+  name: string
+}
+
+interface ApiCurrentUser {
+  firstname?: string
+  lastname?: string
+}
+
+definePageMeta({
+  middleware: ['require-auth'],
+})
+
 const docZoom = ref(1)
 const docRotation = ref(0)
 const openApproveConfirm = ref(false)
 const openReject = ref(false)
 const rejectReason = ref('')
+const isLoading = ref(false)
+const isActionLoading = ref(false)
+const currentUser = ref<ApiCurrentUser | null>(null)
+const leaveRequest = ref<LeaveRequest | null>(null)
 const formPdfFileName = 'แบบใบลาของข้าราชการ.pdf'
 
-const leaveRequests = ref<LeaveRequest[]>([
-  {
-    id: 101,
-    prefix: 'นาง',
-    firstName: 'สมศรี',
-    lastName: 'ดีใจ',
-    position: 'ครู',
-    email: 'somsri@saard.ac.th',
-    department: 'คณิตศาสตร์',
-    type: 'personal',
-    startDate: '26 พฤษภาคม 2569',
-    endDate: '28 พฤษภาคม 2569',
-    dateString: '26 พ.ค. 2026 - 28 พ.ค. 2026',
-    totalDays: 3,
-    location: 'บ้านเลขที่ 88 ถนนสุขุมวิท',
-    province: 'ชลบุรี',
-    district: 'เมืองชลบุรี',
-    subDistrict: 'บางแสน',
-    zipcode: '20130',
-    reason: 'มีธุระด่วนในการเดินทางไปทำนิติกรรมมรดกประจำครอบครัวที่ต่างจังหวัด',
-    status: 'pending',
-    attachmentUrl: 'personal-leave-request-memo.pdf'
-  },
-  {
-    id: 102,
-    prefix: 'นาย',
-    firstName: 'มานะ',
-    lastName: 'ขยันสอน',
-    position: 'ครู',
-    email: 'mana@saard.ac.th',
-    department: 'ภาษาไทย',
-    type: 'sick',
-    startDate: '25 พฤษภาคม 2569',
-    endDate: '25 พฤษภาคม 2569',
-    dateString: '25 พ.ค. 2026',
-    totalDays: 1,
-    location: 'โรงพยาบาลชลบุรี',
-    province: 'ชลบุรี',
-    district: 'เมืองชลบุรี',
-    subDistrict: 'มะขามหย่ง',
-    zipcode: '20000',
-    reason: 'มีอาการเป็นไข้หวัดใหญ่ ปวดศีรษะรุนแรง แพทย์แนะนำให้พักรักษาตัว',
-    attachmentUrl: 'medical-certificate.pdf',
-    status: 'pending'
-  },
-  {
-    id: 103,
-    prefix: 'นางสาว',
-    firstName: 'มณฑา',
-    lastName: 'เพียรเรียน',
-    position: 'ครู',
-    email: 'monta@saard.ac.th',
-    department: 'ภาษาต่างประเทศ',
-    type: 'vacation',
-    startDate: '12 พฤษภาคม 2569',
-    endDate: '15 พฤษภาคม 2569',
-    dateString: '12 พ.ค. 2026 - 15 พ.ค. 2026',
-    totalDays: 4,
-    location: 'บ้านพักต่างจังหวัด',
-    province: 'กรุงเทพมหานคร',
-    district: 'เขตปทุมวัน',
-    subDistrict: 'ลุมพินี',
-    zipcode: '10330',
-    reason: 'ลาพักผ่อนต่างจังหวัดร่วมกับครอบครัวประจำปีการศึกษา',
-    status: 'approved',
-    actionTime: '10 พ.ค. 2026'
-  },
-  {
-    id: 104,
-    prefix: 'นาย',
-    firstName: 'เกรียงไกร',
-    lastName: 'พละดี',
-    position: 'ครู',
-    email: 'kriengkrai@saard.ac.th',
-    department: 'สุขศึกษาและพลศึกษา',
-    type: 'personal',
-    startDate: '2 พฤษภาคม 2569',
-    endDate: '2 พฤษภาคม 2569',
-    dateString: '02 พ.ค. 2026',
-    totalDays: 1,
-    location: 'โรงพยาบาลศูนย์จังหวัด',
-    province: 'ชลบุรี',
-    district: 'เมืองชลบุรี',
-    subDistrict: 'บางแสน',
-    zipcode: '20130',
-    reason: 'พาสมาชิกในครอบครัวเดินทางไปตามที่หมอนัดตรวจโรงพยาบาลศูนย์ประจำจังหวัด',
-    status: 'approved',
-    actionTime: '30 เม.ย. 2026'
-  },
-  {
-    id: 105,
-    prefix: 'นาง',
-    firstName: 'อุษา',
-    lastName: 'วาดศิลป์',
-    position: 'ครู',
-    email: 'usa@saard.ac.th',
-    department: 'สุขศึกษาและพลศึกษา',
-    type: 'vacation',
-    startDate: '15 เมษายน 2569',
-    endDate: '15 เมษายน 2569',
-    dateString: '15 เม.ย. 2026',
-    totalDays: 1,
-    location: 'คลินิกทันตกรรมกรุงเทพ',
-    province: 'กรุงเทพมหานคร',
-    district: 'เขตพระนคร',
-    subDistrict: 'พระบรมมหาราชวัง',
-    zipcode: '10200',
-    reason: 'ทำกิจธุระทำฟันและรักษาพยาบาลที่กรุงเทพฯ',
-    status: 'rejected',
-    rejectReason: 'เนื่องจากตรงกับตารางเวรสอบของโรงเรียนซึ่งขาดผู้ทดแทนทดลองสลับ',
-    actionTime: '12 เม.ย. 2026'
-  }
-])
+const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+const monthLongTH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 
-const leaveRequest = computed(() => {
-  const id = Number(route.params.id)
-  return leaveRequests.value.find((item) => item.id === id) ?? null
+const headerDisplayName = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  const fullName = `${first} ${last}`.trim()
+  return fullName ? `ผอ.${fullName}` : 'ผู้อำนวยการ'
 })
+
+const headerInitials = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  return `${first.charAt(0)}${last.charAt(0)}`.trim() || 'ผอ'
+})
+
+const formatDateShort = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}`
+}
+
+const formatDateLongThai = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  return `${d.getDate()} ${monthLongTH[d.getMonth()]} ${d.getFullYear() + 543}`
+}
+
+const formatDateTimeShort = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}, ${hh}:${mm} น.`
+}
+
+const toLeaveTypeKey = (leaveTypeName?: string): LeaveRequest['type'] => {
+  const text = (leaveTypeName || '').toLowerCase()
+  if (text.includes('ป่วย') || text.includes('sick')) return 'sick'
+  if (text.includes('กิจ') || text.includes('personal')) return 'personal'
+  if (text.includes('พักผ่อน') || text.includes('vacation')) return 'vacation'
+  return 'other'
+}
+
+const resolveNameById = async (path: string, id?: string) => {
+  if (!id) return '-'
+  try {
+    const res = await $fetch<any>(`${BASE}${path}/${id}`)
+    return res?.data?.name || '-'
+  } catch {
+    return '-'
+  }
+}
+
+const fetchCurrentUser = async () => {
+  if (!import.meta.client) return
+  const token = localStorage.getItem('smartleave:access_token')
+  if (!token) return
+
+  const meRes = await $fetch<any>(`${BASE}/member/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  currentUser.value = (meRes?.data ?? null) as ApiCurrentUser | null
+}
+
+const loadLeaveRequest = async () => {
+  const id = String(route.params.id || '')
+  if (!id) {
+    leaveRequest.value = null
+    return
+  }
+
+  const leaveRes = await $fetch<any>(`${BASE}/leave-request/${id}`)
+  const lr = (leaveRes?.data ?? null) as ApiLeaveRequest | null
+  if (!lr) {
+    leaveRequest.value = null
+    return
+  }
+
+  const memberRes = await $fetch<any>(`${BASE}/member/${lr.member_id}`)
+  const member = (memberRes?.data ?? null) as ApiMember | null
+  if (!member) {
+    leaveRequest.value = null
+    return
+  }
+
+  const [prefixName, leaveTypeName, provinceName, districtName, subDistrictName, zipcodeName] = await Promise.all([
+    resolveNameById('/system/prefix', member.prefix_id),
+    resolveNameById('/system/leave-type', lr.leave_type_id),
+    resolveNameById('/system/province', member.province_id),
+    resolveNameById('/system/district', member.district_id),
+    resolveNameById('/system/sub-district', member.sub_district_id),
+    resolveNameById('/system/zipcode', member.zipcode_id),
+  ])
+
+  const type = toLeaveTypeKey(leaveTypeName)
+  const dateString = lr.start_date === lr.end_date
+    ? formatDateShort(lr.start_date)
+    : `${formatDateShort(lr.start_date)} - ${formatDateShort(lr.end_date)}`
+
+  leaveRequest.value = {
+    id: lr.id,
+    prefix: prefixName,
+    firstName: member.firstname,
+    lastName: member.lastname,
+    position: member.role === 'director' ? 'ผู้อำนวยการ' : 'ครู',
+    email: member.email,
+    department: member.department || '-',
+    type,
+    startDate: formatDateLongThai(lr.start_date),
+    endDate: formatDateLongThai(lr.end_date),
+    dateString,
+    totalDays: lr.total_days,
+    location: `${subDistrictName} ${districtName} ${provinceName}`,
+    province: provinceName,
+    district: districtName,
+    subDistrict: subDistrictName,
+    zipcode: zipcodeName,
+    reason: lr.reason,
+    attachmentUrl: '',
+    status: lr.status,
+    actionTime: formatDateTimeShort(lr.updated_at),
+    rejectReason: lr.reject_reason,
+  }
+}
+
+const loadPageData = async () => {
+  isLoading.value = true
+  try {
+    await Promise.all([fetchCurrentUser(), loadLeaveRequest()])
+  } catch {
+    leaveRequest.value = null
+    addToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงรายละเอียดใบคำร้องได้ กรุณาลองใหม่อีกครั้ง')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const isPdfFile = (fileName?: string) => {
   if (!fileName) return false
@@ -560,13 +643,14 @@ const getLeaveTypeText = (type: string) => {
   if (type === 'sick') return 'ลาป่วย'
   if (type === 'personal') return 'ลากิจ'
   if (type === 'vacation') return 'ลาพักผ่อน'
-  return type
+  return 'ประเภทอื่นๆ'
 }
 
 const getLeaveTypeClass = (type: string) => {
   if (type === 'sick') return 'text-emerald-700 bg-emerald-50'
   if (type === 'personal') return 'text-amber-700 bg-amber-50'
-  return 'text-blue-700 bg-blue-50'
+  if (type === 'vacation') return 'text-blue-700 bg-blue-50'
+  return 'text-slate-700 bg-slate-100'
 }
 
 const getStatusText = (status: string) => {
@@ -605,12 +689,21 @@ const printFormPdf = () => {
   window.print()
 }
 
-const approveRequest = () => {
+const approveRequest = async () => {
   if (!leaveRequest.value || leaveRequest.value.status !== 'pending') return
-  leaveRequest.value.status = 'approved'
-  leaveRequest.value.actionTime = 'เมื่อสักครู่นี้'
-  leaveRequest.value.rejectReason = undefined
-  addToast('success', 'อนุมัติสำเร็จ', 'อนุมัติใบคำร้องเรียบร้อยแล้ว')
+  isActionLoading.value = true
+  try {
+    await $fetch(`${BASE}/leave-request/${leaveRequest.value.id}`, {
+      method: 'PATCH',
+      body: { status: 'approved' },
+    })
+    await loadLeaveRequest()
+    addToast('success', 'อนุมัติสำเร็จ', 'อนุมัติใบคำร้องเรียบร้อยแล้ว')
+  } catch {
+    addToast('error', 'อนุมัติไม่สำเร็จ', 'ไม่สามารถบันทึกการอนุมัติได้ กรุณาลองใหม่')
+  } finally {
+    isActionLoading.value = false
+  }
 }
 
 const openApproveConfirmModal = () => {
@@ -619,35 +712,54 @@ const openApproveConfirmModal = () => {
 }
 
 const closeApproveConfirmModal = () => {
+  if (isActionLoading.value) return
   openApproveConfirm.value = false
 }
 
-const confirmApprove = () => {
-  approveRequest()
+const confirmApprove = async () => {
+  await approveRequest()
   closeApproveConfirmModal()
 }
 
 const openRejectModal = () => {
+  if (!leaveRequest.value || leaveRequest.value.status !== 'pending') return
   rejectReason.value = ''
   openReject.value = true
 }
 
 const closeRejectModal = () => {
+  if (isActionLoading.value) return
   openReject.value = false
   rejectReason.value = ''
 }
 
-const submitReject = () => {
+const submitReject = async () => {
   if (!leaveRequest.value || leaveRequest.value.status !== 'pending') return
   if (!rejectReason.value.trim()) {
     addToast('warning', 'ยังไม่กรอกเหตุผล', 'กรุณาระบุเหตุผลก่อนยืนยันไม่อนุมัติ')
     return
   }
 
-  leaveRequest.value.status = 'rejected'
-  leaveRequest.value.rejectReason = rejectReason.value.trim()
-  leaveRequest.value.actionTime = 'เมื่อสักครู่นี้'
-  closeRejectModal()
-  addToast('info', 'ไม่อนุมัติเรียบร้อย', 'ระบบบันทึกเหตุผลและแจ้งกลับผู้ยื่นคำขอแล้ว')
+  isActionLoading.value = true
+  try {
+    await $fetch(`${BASE}/leave-request/${leaveRequest.value.id}`, {
+      method: 'PATCH',
+      body: {
+        status: 'rejected',
+        reject_reason: rejectReason.value.trim(),
+      },
+    })
+    await loadLeaveRequest()
+    closeRejectModal()
+    addToast('info', 'ไม่อนุมัติเรียบร้อย', 'ระบบบันทึกเหตุผลและแจ้งกลับผู้ยื่นคำขอแล้ว')
+  } catch {
+    addToast('error', 'ไม่อนุมัติไม่สำเร็จ', 'ไม่สามารถบันทึกเหตุผลการไม่อนุมัติได้ กรุณาลองใหม่')
+  } finally {
+    isActionLoading.value = false
+  }
 }
+
+onMounted(() => {
+  loadPageData()
+})
 </script>

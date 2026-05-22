@@ -40,7 +40,7 @@
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-3">
               <div class="hidden md:block text-right">
-                <p class="text-sm font-bold text-slate-800">ผอ.วันชัย ใจดี</p>
+                <p class="text-sm font-bold text-slate-800">{{ headerDisplayName }}</p>
                 <p
                   class="text-3xs text-slate-500 font-semibold tracking-wider uppercase"
                 >
@@ -50,8 +50,9 @@
               <div
                 class="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-700"
               >
-                วช
+                {{ headerInitials }}
               </div>
+              <AppLogoutButton />
             </div>
           </div>
         </div>
@@ -82,12 +83,22 @@
             </svg>
             ย้อนกลับ
           </NuxtLink>
+          <NuxtLink
+            to="/director/leave-type"
+            class="inline-flex items-center gap-1.5 text-xs bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-lg font-semibold transition-colors"
+          >
+            จัดการประเภทการลา
+          </NuxtLink>
           <div
             class="flex items-center gap-2 text-xs bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-semibold"
           >
-            จำนวนบุคลากรทั้งหมดในระบบ: 48 คน
+            จำนวนบุคลากรทั้งหมดในระบบ: {{ totalMembers }} คน
           </div>
         </div>
+      </div>
+
+      <div v-if="isLoading" class="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2 text-sm text-blue-700">
+        กำลังโหลดข้อมูลใบลาจากระบบ...
       </div>
 
       <!-- ส่วนตัวกรองข้อมูลอัจฉริยะ (Smart Filter Bar) -->
@@ -134,19 +145,13 @@
               class="block text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1.5"
               >กลุ่มสาระ / ฝ่ายงาน</label
             >
-            <select
+            <AppDropdown
+              id="filterDept"
               v-model="filterDept"
-              class="block w-full rounded-xl border border-slate-300 px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/10"
-            >
-              <option value="all">แสดงทุกกลุ่มสาระฯ</option>
-              <option value="คณิตศาสตร์">คณิตศาสตร์</option>
-              <option value="วิทยาศาสตร์และเทคโนโลยี">
-                วิทยาศาสตร์และเทคโนโลยี
-              </option>
-              <option value="ภาษาไทย">ภาษาไทย</option>
-              <option value="ภาษาต่างประเทศ">ภาษาต่างประเทศ</option>
-              <option value="สุขศึกษาและพลศึกษา">สุขศึกษาและพลศึกษา</option>
-            </select>
+              :options="departmentFilterOptions"
+              :page-size="8"
+              :page-size-options="[5, 8, 10, 20]"
+            />
           </div>
 
           <!-- ตัวกรอง: ประเภทการลา -->
@@ -155,15 +160,13 @@
               class="block text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1.5"
               >ประเภทการลา</label
             >
-            <select
+            <AppDropdown
+              id="filterType"
               v-model="filterType"
-              class="block w-full rounded-xl border border-slate-300 px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/10"
-            >
-              <option value="all">แสดงทุกประเภทการลา</option>
-              <option value="sick">ลาป่วย (Sick)</option>
-              <option value="personal">ลากิจ (Personal)</option>
-              <option value="vacation">ลาพักผ่อน (Vacation)</option>
-            </select>
+              :options="typeFilterOptions"
+              :page-size="5"
+              :page-size-options="[5, 8, 10]"
+            />
           </div>
 
           <!-- ตัวกรอง: สถานะการพิจารณา -->
@@ -172,15 +175,13 @@
               class="block text-2xs font-bold text-slate-400 uppercase tracking-wider mb-1.5"
               >สถานะใบคำขอ</label
             >
-            <select
+            <AppDropdown
+              id="filterStatus"
               v-model="filterStatus"
-              class="block w-full rounded-xl border border-slate-300 px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/10"
-            >
-              <option value="all">แสดงทุกสถานะ</option>
-              <option value="pending">รอการพิจารณา</option>
-              <option value="approved">อนุมัติเรียบร้อย</option>
-              <option value="rejected">ปฏิเสธใบคำร้อง</option>
-            </select>
+              :options="statusFilterOptions"
+              :page-size="5"
+              :page-size-options="[5, 8, 10]"
+            />
           </div>
         </div>
 
@@ -257,7 +258,7 @@
                     class="text-xs font-semibold px-2.5 py-1 rounded-lg"
                     :class="getLeaveTypeClass(req.type)"
                   >
-                    {{ getLeaveTypeText(req.type) }}
+                    {{ getLeaveTypeText(req.type, req.leaveTypeName) }}
                   </span>
                 </td>
 
@@ -404,7 +405,7 @@
                   >ประเภทการลา</span
                 >
                 <span class="text-sm font-bold text-slate-900">{{
-                  getLeaveTypeText(selectedReq?.type || "")
+                  getLeaveTypeText(selectedReq?.type || '', selectedReq?.leaveTypeName)
                 }}</span>
               </div>
               <div>
@@ -670,10 +671,14 @@
               <button
                 type="button"
                 @click="confirmAction"
+                :disabled="isActionLoading"
                 class="px-5 py-2 rounded-xl text-xs font-bold text-white"
-                :class="confirmActionType === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700'"
+                :class="[
+                  confirmActionType === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700',
+                  isActionLoading ? 'opacity-60 cursor-not-allowed' : ''
+                ]"
               >
-                {{ confirmActionType === 'approve' ? 'ยืนยันอนุมัติ' : 'ยืนยันปฏิเสธ' }}
+                {{ isActionLoading ? 'กำลังบันทึก...' : (confirmActionType === 'approve' ? 'ยืนยันอนุมัติ' : 'ยืนยันปฏิเสธ') }}
               </button>
             </div>
           </div>
@@ -684,318 +689,436 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, onMounted, ref } from 'vue'
 
-const { addToast } = useToast();
+const { addToast } = useToast()
+const config = useRuntimeConfig()
+const BASE = config.public.BASE_API
 
-// โครงสร้างประเภทข้อมูล (TypeScript Interfaces)
 interface LeaveRequest {
-  id: number;
-  prefix: string;
-  firstName: string;
-  lastName: string;
-  department: string;
-  type: "sick" | "personal" | "vacation";
-  dateString: string;
-  totalDays: number;
-  reason: string;
-  attachmentUrl?: string;
-  status: "pending" | "approved" | "rejected";
-  actionTime?: string;
-  rejectReason?: string;
+  id: string
+  prefix: string
+  firstName: string
+  lastName: string
+  department: string
+  leaveTypeId: string
+  leaveTypeName: string
+  type: 'sick' | 'personal' | 'vacation' | 'other'
+  dateString: string
+  totalDays: number
+  reason: string
+  attachmentUrl?: string
+  status: 'pending' | 'approved' | 'rejected'
+  actionTime?: string
+  rejectReason?: string
 }
 
-// แถบสแกนค้นหาและคัดเลือก
-const searchQuery = ref<string>("");
-const filterDept = ref<string>("all");
-const filterType = ref<string>("all");
-const filterStatus = ref<string>("all");
+interface ApiLeaveRequest {
+  id: string
+  member_id: string
+  leave_type_id: string
+  start_date: string
+  end_date: string
+  total_days: number
+  reason: string
+  status: 'pending' | 'approved' | 'rejected'
+  approved_at?: string
+  reject_reason?: string
+  updated_at: string
+}
 
-// รายการใบลาบุคลากรทั้งหมดในตารางฐานข้อมูลจำลอง (Mock Master Data)
-const leaveRequests = ref<LeaveRequest[]>([
-  {
-    id: 101,
-    prefix: "นาง",
-    firstName: "สมศรี",
-    lastName: "ดีใจ",
-    department: "คณิตศาสตร์",
-    type: "personal",
-    dateString: "26 พ.ค. 2026 - 28 พ.ค. 2026",
-    totalDays: 3,
-    reason: "มีธุระด่วนในการเดินทางไปทำนิติกรรมมรดกประจำครอบครัวที่ต่างจังหวัด",
-    status: "pending",
-  },
-  {
-    id: 102,
-    prefix: "นาย",
-    firstName: "มานะ",
-    lastName: "ขยันสอน",
-    department: "ภาษาไทย",
-    type: "sick",
-    dateString: "25 พ.ค. 2026",
-    totalDays: 1,
-    reason: "มีอาการเป็นไข้หวัดใหญ่ ปวดศีรษะรุนแรง แพทย์แนะนำให้พักรักษาตัว",
-    attachmentUrl: "medical-certificate.pdf",
-    status: "pending",
-  },
-  {
-    id: 103,
-    prefix: "นางสาว",
-    firstName: "มณฑา",
-    lastName: "เพียรเรียน",
-    department: "ภาษาต่างประเทศ",
-    type: "vacation",
-    dateString: "12 พ.ค. 2026 - 15 พ.ค. 2026",
-    totalDays: 4,
-    reason: "ลาพักผ่อนต่างจังหวัดร่วมกับครอบครัวประจำปีการศึกษา",
-    status: "approved",
-    actionTime: "10 พ.ค. 2026",
-  },
-  {
-    id: 104,
-    prefix: "นาย",
-    firstName: "เกรียงไกร",
-    lastName: "พละดี",
-    department: "สุขศึกษาและพลศึกษา",
-    type: "personal",
-    dateString: "02 พ.ค. 2026",
-    totalDays: 1,
-    reason:
-      "พาสมาชิกในครอบครัวเดินทางไปตามที่หมอนัดตรวจโรงพยาบาลศูนย์ประจำจังหวัด",
-    status: "approved",
-    actionTime: "30 เม.ย. 2026",
-  },
-  {
-    id: 105,
-    prefix: "นาง",
-    firstName: "อุษา",
-    lastName: "วาดศิลป์",
-    department: "สุขศึกษาและพลศึกษา",
-    type: "vacation",
-    dateString: "15 เม.ย. 2026",
-    totalDays: 1,
-    reason: "ทำกิจธุระทำฟันและรักษาพยาบาลที่กรุงเทพฯ",
-    status: "rejected",
-    rejectReason:
-      "เนื่องจากตรงกับตารางเวรสอบของโรงเรียนซึ่งขาดผู้ทดแทนทดลองสลับ",
-    actionTime: "12 เม.ย. 2026",
-  },
-]);
+interface ApiMember {
+  id: string
+  firstname: string
+  lastname: string
+  department?: string
+}
 
-// ข้อมูลจำลองสถิติตัวแปรหลัก
-const activeLeavesToday = ref<number>(2);
-const approvedThisMonth = ref<number>(14);
-const attendanceRate = ref<number>(95.8);
+interface ApiLeaveType {
+  id: string
+  name: string
+}
+
+interface ApiCurrentUser {
+  firstname?: string
+  lastname?: string
+}
+
+definePageMeta({
+  middleware: ['require-auth'],
+})
+
+const isLoading = ref(false)
+const isActionLoading = ref(false)
+
+const searchQuery = ref('')
+const filterDept = ref('all')
+const filterType = ref('all')
+const filterStatus = ref('all')
+
+const leaveRequests = ref<LeaveRequest[]>([])
+const totalMembers = ref(0)
+const currentUser = ref<ApiCurrentUser | null>(null)
+const memberMap = ref<Record<string, ApiMember>>({})
+const leaveTypeMap = ref<Record<string, ApiLeaveType>>({})
+const leaveTypeItems = ref<ApiLeaveType[]>([])
+
+const headerDisplayName = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  const fullName = `${first} ${last}`.trim()
+  return fullName ? `ผอ.${fullName}` : 'ผู้อำนวยการ'
+})
+
+const headerInitials = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  return `${first.charAt(0)}${last.charAt(0)}`.trim() || 'ผอ'
+})
+
+const departmentFilterOptions = computed(() => {
+  const fixedDepartments = [
+    'ภาษาไทย',
+    'คณิตศาสตร์',
+    'วิทยาศาสตร์และเทคโนโลยี',
+    'สังคมศึกษา ศาสนา และวัฒนธรรม',
+    'สุขศึกษาและพลศึกษา',
+    'ศิลปะ',
+    'การงานอาชีพ',
+    'ภาษาต่างประเทศ',
+  ]
+
+  return [
+    { label: 'แสดงทุกกลุ่มสาระฯ', value: 'all' },
+    ...fixedDepartments.map((dept) => ({ label: dept, value: dept })),
+  ]
+})
+
+const typeFilterOptions = computed(() => {
+  return [
+    { label: 'แสดงทุกประเภทการลา', value: 'all' },
+    ...leaveTypeItems.value.map((item) => ({ label: item.name, value: item.id })),
+  ]
+})
+
+const statusFilterOptions = [
+  { label: 'แสดงทุกสถานะ', value: 'all' },
+  { label: 'รอการพิจารณา', value: 'pending' },
+  { label: 'อนุมัติเรียบร้อย', value: 'approved' },
+  { label: 'ปฏิเสธใบคำร้อง', value: 'rejected' },
+]
 
 // ควบคุมหน้าต่างป๊อปอัปดีเทล
-const openDetail = ref<boolean>(false);
-const selectedReq = ref<LeaveRequest | null>(null);
+const openDetail = ref(false)
+const selectedReq = ref<LeaveRequest | null>(null)
 
 // ควบคุมหน้าต่างป๊อปอัปปฏิเสธ
-const openReject = ref<boolean>(false);
-const rejectReasonText = ref<string>("");
-const reqToReject = ref<LeaveRequest | null>(null);
-const openConfirm = ref<boolean>(false);
-const confirmActionType = ref<"approve" | "reject" | null>(null);
-const confirmReq = ref<LeaveRequest | null>(null);
+const openReject = ref(false)
+const rejectReasonText = ref('')
+const reqToReject = ref<LeaveRequest | null>(null)
+const openConfirm = ref(false)
+const confirmActionType = ref<'approve' | 'reject' | null>(null)
+const confirmReq = ref<LeaveRequest | null>(null)
+
+const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+
+const formatDisplayDate = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}`
+}
+
+const formatDisplayDateTime = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}, ${hh}:${mm} น.`
+}
+
+const toLeaveTypeKey = (leaveTypeName?: string): LeaveRequest['type'] => {
+  const text = (leaveTypeName || '').toLowerCase()
+  if (text.includes('ป่วย') || text.includes('sick')) return 'sick'
+  if (text.includes('กิจ') || text.includes('personal')) return 'personal'
+  if (text.includes('พักผ่อน') || text.includes('vacation')) return 'vacation'
+  return 'other'
+}
+
+const mapLeaveRequest = (item: ApiLeaveRequest): LeaveRequest => {
+  const member = memberMap.value[item.member_id]
+  const leaveType = leaveTypeMap.value[item.leave_type_id]
+  const typeKey = toLeaveTypeKey(leaveType?.name)
+  const dateString = item.start_date === item.end_date
+    ? formatDisplayDate(item.start_date)
+    : `${formatDisplayDate(item.start_date)} - ${formatDisplayDate(item.end_date)}`
+
+  return {
+    id: item.id,
+    prefix: '',
+    firstName: member?.firstname || 'ไม่ทราบชื่อ',
+    lastName: member?.lastname || '',
+    department: member?.department || 'ไม่ระบุกลุ่มสาระ',
+    leaveTypeId: item.leave_type_id,
+    leaveTypeName: leaveType?.name || 'ประเภทอื่นๆ',
+    type: typeKey,
+    dateString,
+    totalDays: item.total_days,
+    reason: item.reason,
+    status: item.status,
+    actionTime: item.approved_at ? formatDisplayDateTime(item.approved_at) : formatDisplayDateTime(item.updated_at),
+    rejectReason: item.reject_reason,
+  }
+}
+
+const fetchCurrentUser = async () => {
+  if (!import.meta.client) return
+  const token = localStorage.getItem('smartleave:access_token')
+  if (!token) return
+
+  const meRes = await $fetch<any>(`${BASE}/member/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  currentUser.value = (meRes?.data ?? null) as ApiCurrentUser | null
+}
+
+const fetchReferenceData = async () => {
+  const [membersRes, leaveTypesRes] = await Promise.all([
+    $fetch<any>(`${BASE}/member`),
+    $fetch<any>(`${BASE}/system/leave-type`),
+  ])
+
+  const members = (membersRes?.data ?? []) as ApiMember[]
+  const leaveTypes = (leaveTypesRes?.data ?? []) as ApiLeaveType[]
+  leaveTypeItems.value = leaveTypes
+
+  memberMap.value = members.reduce<Record<string, ApiMember>>((acc, m) => {
+    acc[m.id] = m
+    return acc
+  }, {})
+
+  leaveTypeMap.value = leaveTypes.reduce<Record<string, ApiLeaveType>>((acc, lt) => {
+    acc[lt.id] = lt
+    return acc
+  }, {})
+
+  totalMembers.value = members.length
+}
+
+const fetchLeaveRequests = async () => {
+  const leaveRes = await $fetch<any>(`${BASE}/leave-request`)
+  const allRequests = (leaveRes?.data ?? []) as ApiLeaveRequest[]
+
+  leaveRequests.value = allRequests
+    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+    .map(mapLeaveRequest)
+}
+
+const loadPageData = async () => {
+  isLoading.value = true
+  try {
+    await Promise.all([fetchCurrentUser(), fetchReferenceData()])
+    await fetchLeaveRequests()
+  } catch (error) {
+    addToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลใบลาได้ กรุณาลองใหม่อีกครั้ง')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // ตัวประมวลผลคัดกรองตารางด้วย Computed Property อัจฉริยะ (Smart Filter Engine)
 const filteredRequests = computed<LeaveRequest[]>(() => {
   return leaveRequests.value.filter((req) => {
-    // 1. ค้นหาด้วยชื่อจริง หรือ นามสกุล
-    const fullName = `${req.firstName} ${req.lastName}`.toLowerCase();
-    const matchSearch = fullName.includes(searchQuery.value.toLowerCase());
-
-    // 2. กรองกลุ่มสาระฯ
+    const fullName = `${req.firstName} ${req.lastName}`.toLowerCase()
+    const matchSearch = fullName.includes(searchQuery.value.toLowerCase())
     const matchDept =
-      filterDept.value === "all" || req.department === filterDept.value;
+      filterDept.value === 'all' || req.department === filterDept.value
 
-    // 3. กรองประเภทวันลา
     const matchType =
-      filterType.value === "all" || req.type === filterType.value;
+      filterType.value === 'all' || req.leaveTypeId === filterType.value
 
-    // 4. กรองสถานะใบคำขอ
     const matchStatus =
-      filterStatus.value === "all" || req.status === filterStatus.value;
+      filterStatus.value === 'all' || req.status === filterStatus.value
 
-    return matchSearch && matchDept && matchType && matchStatus;
-  });
-});
+    return matchSearch && matchDept && matchType && matchStatus
+  })
+})
 
 // ล้างค่าตัวคัดกรองทั้งหมดกลับสู่สถานะเริ่มต้น
 const resetFilters = () => {
-  searchQuery.value = "";
-  filterDept.value = "all";
-  filterType.value = "all";
-  filterStatus.value = "all";
-};
+  searchQuery.value = ''
+  filterDept.value = 'all'
+  filterType.value = 'all'
+  filterStatus.value = 'all'
+}
 
 // แมปค่าเพื่อเปลี่ยนคำอธิบายประเภทการลา
-const getLeaveTypeText = (type: string) => {
-  if (type === "sick") return "ลาป่วย";
-  if (type === "personal") return "ลากิจ";
-  if (type === "vacation") return "ลาพักผ่อน";
-  return type;
-};
+const getLeaveTypeText = (type: string, leaveTypeName?: string) => {
+  if (leaveTypeName) return leaveTypeName
+  if (type === 'sick') return 'ลาป่วย'
+  if (type === 'personal') return 'ลากิจ'
+  if (type === 'vacation') return 'ลาพักผ่อน'
+  return 'ประเภทอื่นๆ'
+}
 
 const getLeaveTypeClass = (type: string) => {
   switch (type) {
-    case "sick":
-      return "text-emerald-700 bg-emerald-50";
-    case "personal":
-      return "text-amber-700 bg-amber-50";
+    case 'sick':
+      return 'text-emerald-700 bg-emerald-50'
+    case 'personal':
+      return 'text-amber-700 bg-amber-50'
+    case 'vacation':
+      return 'text-blue-700 bg-blue-50'
     default:
-      return "text-blue-700 bg-blue-50";
+      return 'text-slate-700 bg-slate-100'
   }
-};
+}
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case "approved":
-      return "bg-emerald-50 text-emerald-700";
-    case "rejected":
-      return "bg-rose-50 text-rose-700";
+    case 'approved':
+      return 'bg-emerald-50 text-emerald-700'
+    case 'rejected':
+      return 'bg-rose-50 text-rose-700'
     default:
-      return "bg-amber-50 text-amber-700";
+      return 'bg-amber-50 text-amber-700'
   }
-};
+}
 
 const getStatusDotClass = (status: string) => {
   switch (status) {
-    case "approved":
-      return "bg-emerald-500";
-    case "rejected":
-      return "bg-rose-500";
+    case 'approved':
+      return 'bg-emerald-500'
+    case 'rejected':
+      return 'bg-rose-500'
     default:
-      return "bg-amber-500";
+      return 'bg-amber-500'
   }
-};
+}
 
 const getStatusText = (status: string) => {
   switch (status) {
-    case "approved":
-      return "อนุมัติเรียบร้อย";
-    case "rejected":
-      return "ปฏิเสธใบคำร้อง";
+    case 'approved':
+      return 'อนุมัติเรียบร้อย'
+    case 'rejected':
+      return 'ปฏิเสธใบคำร้อง'
     default:
-      return "รอการพิจารณา";
+      return 'รอการพิจารณา'
   }
-};
+}
 
 // เปิด-ปิด ป๊อปอัปดีเทล
 const openDetailModal = (req: LeaveRequest) => {
-  selectedReq.value = req;
-  openDetail.value = true;
-};
+  selectedReq.value = req
+  openDetail.value = true
+}
 
 const closeDetailModal = () => {
-  openDetail.value = false;
-  selectedReq.value = null;
-};
+  openDetail.value = false
+  selectedReq.value = null
+}
 
-// อนุมัติใบลา
-const approveRequest = (id: number) => {
-  const req = leaveRequests.value.find((p) => p.id === id);
-  if (!req) return;
+const updateLeaveStatus = async (id: string, status: 'approved' | 'rejected', rejectReason = '') => {
+  isActionLoading.value = true
+  try {
+    await $fetch(`${BASE}/leave-request/${id}`, {
+      method: 'PATCH',
+      body: {
+        status,
+        reject_reason: rejectReason,
+      },
+    })
 
-  req.status = "approved";
-  req.actionTime = "เมื่อครู่นี้";
-
-  approvedThisMonth.value++;
-  activeLeavesToday.value++;
-
-  addToast(
-    "success",
-    "อนุมัติใบลาสำเร็จ",
-    `อนุมัติใบลาของ "${req.prefix}${req.firstName} ${req.lastName}" เรียบร้อยแล้ว ระบบจัดส่งผลกลับไปยังคุณครูแล้ว`,
-  );
-};
+    await fetchLeaveRequests()
+  } finally {
+    isActionLoading.value = false
+  }
+}
 
 const openApproveConfirm = (req: LeaveRequest) => {
-  confirmReq.value = req;
-  confirmActionType.value = "approve";
-  openConfirm.value = true;
-};
+  confirmReq.value = req
+  confirmActionType.value = 'approve'
+  openConfirm.value = true
+}
 
 // ปฏิเสธการลาพร้อมระบุเหตุผล
 const openRejectWithReason = (req: LeaveRequest) => {
-  reqToReject.value = req;
-  rejectReasonText.value = "";
-  openReject.value = true;
-};
+  reqToReject.value = req
+  rejectReasonText.value = ''
+  openReject.value = true
+}
 
 const closeRejectModal = () => {
-  openReject.value = false;
-  reqToReject.value = null;
-  rejectReasonText.value = "";
-};
+  openReject.value = false
+  reqToReject.value = null
+  rejectReasonText.value = ''
+}
 
-const submitReject = () => {
-  if (!reqToReject.value || !rejectReasonText.value) {
-    addToast("warning", "ยังไม่กรอกเหตุผล", "กรุณาระบุเหตุผลก่อนยืนยันการปฏิเสธ");
-    return;
+const submitReject = async () => {
+  if (!reqToReject.value || !rejectReasonText.value.trim()) {
+    addToast('warning', 'ยังไม่กรอกเหตุผล', 'กรุณาระบุเหตุผลก่อนยืนยันการปฏิเสธ')
+    return
   }
 
-  const req = leaveRequests.value.find((p) => p.id === reqToReject.value!.id);
-  if (req) {
-    req.status = "rejected";
-    req.rejectReason = rejectReasonText.value;
-    req.actionTime = "เมื่อครู่นี้";
-  }
-
-  addToast(
-    "info",
-    "ปฏิเสธคำร้องเรียบร้อย",
-    `ปฏิเสธคำร้องขอลาของครู "${req?.firstName}" และส่งเหตุผลกลับในระบบแล้ว`,
-  );
-  closeRejectModal();
-};
+  await updateLeaveStatus(reqToReject.value.id, 'rejected', rejectReasonText.value.trim())
+  addToast('info', 'ปฏิเสธคำร้องเรียบร้อย', `ปฏิเสธคำร้องขอลาของครู "${reqToReject.value.firstName}" และส่งเหตุผลกลับในระบบแล้ว`)
+  closeRejectModal()
+}
 
 const openRejectConfirm = () => {
-  if (!reqToReject.value || !rejectReasonText.value) {
-    addToast("warning", "ยังไม่กรอกเหตุผล", "กรุณาระบุเหตุผลก่อนยืนยันการปฏิเสธ");
-    return;
+  if (!reqToReject.value || !rejectReasonText.value.trim()) {
+    addToast('warning', 'ยังไม่กรอกเหตุผล', 'กรุณาระบุเหตุผลก่อนยืนยันการปฏิเสธ')
+    return
   }
 
-  confirmReq.value = reqToReject.value;
-  confirmActionType.value = "reject";
-  openConfirm.value = true;
-};
+  confirmReq.value = reqToReject.value
+  confirmActionType.value = 'reject'
+  openConfirm.value = true
+}
 
 const closeConfirmModal = () => {
-  openConfirm.value = false;
-  confirmActionType.value = null;
-  confirmReq.value = null;
-};
+  openConfirm.value = false
+  confirmActionType.value = null
+  confirmReq.value = null
+}
 
-const confirmAction = () => {
-  if (!confirmReq.value || !confirmActionType.value) return;
+const confirmAction = async () => {
+  if (!confirmReq.value || !confirmActionType.value || isActionLoading.value) return
 
-  if (confirmActionType.value === "approve") {
-    approveRequest(confirmReq.value.id);
-    closeDetailModal();
+  try {
+    if (confirmActionType.value === 'approve') {
+      await updateLeaveStatus(confirmReq.value.id, 'approved')
+      addToast('success', 'อนุมัติใบลาสำเร็จ', `อนุมัติใบลาของ "${confirmReq.value.firstName}" เรียบร้อยแล้ว`)
+      closeDetailModal()
+    } else {
+      await submitReject()
+    }
+  } catch (error) {
+    addToast('error', 'บันทึกไม่สำเร็จ', 'ไม่สามารถอัปเดตสถานะใบคำขอได้ กรุณาลองใหม่')
+  } finally {
+    closeConfirmModal()
   }
-  else {
-    submitReject();
-  }
-
-  closeConfirmModal();
-};
+}
 
 // จัดการกรณีใช้งานปุ่มอนุมัติ/ปฏิเสธจากทางด้านในป๊อปอัปดีเทลตรงกลาง
 const approveFromModal = () => {
   if (selectedReq.value) {
-    openApproveConfirm(selectedReq.value);
+    openApproveConfirm(selectedReq.value)
   }
-};
+}
 
 const rejectFromModal = () => {
   if (selectedReq.value) {
-    const req = selectedReq.value;
-    closeDetailModal();
-    openRejectWithReason(req);
+    const req = selectedReq.value
+    closeDetailModal()
+    openRejectWithReason(req)
   }
-};
+}
+
+onMounted(() => {
+  loadPageData()
+})
 </script>
 
 <style scoped>

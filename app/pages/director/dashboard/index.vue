@@ -23,12 +23,13 @@
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-3">
               <div class="hidden md:block text-right">
-                <p class="text-sm font-bold text-slate-800">ผอ.วันชัย ใจดี</p>
+                <p class="text-sm font-bold text-slate-800">{{ headerDisplayName }}</p>
                 <p class="text-3xs text-slate-500 font-semibold tracking-wider uppercase">ผู้อำนวยการสถานศึกษา</p>
               </div>
               <div class="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center font-bold text-blue-700">
-                วช
+                {{ headerInitials }}
               </div>
+              <AppLogoutButton />
             </div>
           </div>
         </div>
@@ -37,6 +38,9 @@
 
     <!-- เนื้อหาหลัก (Main Content Area) -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <div v-if="isLoading" class="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+        กำลังโหลดข้อมูลแดชบอร์ดจากระบบจริง...
+      </div>
       
       <!-- ส่วนต้อนรับและสรุปสถิติด่วน (Welcome & Quick Stats) -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -45,7 +49,7 @@
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div class="space-y-1">
             <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">รอพิจารณา</span>
-            <p class="text-3xl font-black text-slate-900">{{ pendingRequests.length }} <span class="text-sm font-semibold text-slate-400">ใบ</span></p>
+            <p class="text-3xl font-black text-slate-900">{{ pendingRequestsCount }} <span class="text-sm font-semibold text-slate-400">ใบ</span></p>
             <p class="text-xs text-slate-400">ต้องการการอนุมัติเร่งด่วน</p>
           </div>
           <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
@@ -60,7 +64,7 @@
           <div class="space-y-1">
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">ลาหยุดวันนี้</span>
             <p class="text-3xl font-black text-slate-900">{{ activeLeavesToday }} <span class="text-sm font-semibold text-slate-400">คน</span></p>
-            <p class="text-xs text-slate-400">จากบุคลากรทั้งหมด 48 คน</p>
+            <p class="text-xs text-slate-400">จากบุคลากรทั้งหมด {{ totalMembers }} คน</p>
           </div>
           <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
             <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,12 +110,20 @@
             <span class="w-1.5 h-4 bg-blue-600 rounded-full"></span>
             ใบลาค้างพิจารณาอนุมัติ
           </h2>
-          <NuxtLink
-            to="/director/leave-request-approve"
-            class="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
-          >
-            ไปหน้าพิจารณาใบลาทั้งหมด
-          </NuxtLink>
+          <div class="flex flex-wrap items-center gap-2">
+            <NuxtLink
+              to="/director/leave-type"
+              class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+            >
+              จัดการประเภทการลา
+            </NuxtLink>
+            <NuxtLink
+              to="/director/leave-request-approve"
+              class="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+            >
+              ไปหน้าพิจารณาใบลาทั้งหมด
+            </NuxtLink>
+          </div>
         </div>
 
         <!-- กรณีไม่มีใบลาค้างพิจารณา -->
@@ -395,10 +407,14 @@
               <button
                 type="button"
                 @click="confirmAction"
+                :disabled="isActionLoading"
                 class="px-5 py-2 rounded-xl text-xs font-bold text-white"
-                :class="confirmActionType === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700'"
+                :class="[
+                  confirmActionType === 'approve' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700',
+                  isActionLoading ? 'opacity-60 cursor-not-allowed' : ''
+                ]"
               >
-                {{ confirmActionType === 'approve' ? 'ยืนยันอนุมัติ' : 'ยืนยันปฏิเสธ' }}
+                {{ isActionLoading ? 'กำลังบันทึก...' : (confirmActionType === 'approve' ? 'ยืนยันอนุมัติ' : 'ยืนยันปฏิเสธ') }}
               </button>
             </div>
           </div>
@@ -410,113 +426,90 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const { addToast } = useToast()
+const config = useRuntimeConfig()
+const BASE = config.public.BASE_API
 
-// โครงสร้างประเภทข้อมูล (TypeScript Interfaces)
+type LeaveStatus = 'pending' | 'approved' | 'rejected'
+type LeaveTypeKey = 'sick' | 'personal' | 'vacation' | 'other'
+
 interface LeaveRequest {
-  id: number
+  id: string
   prefix: string
   firstName: string
   lastName: string
   department: string
-  type: 'sick' | 'personal' | 'vacation'
+  type: LeaveTypeKey
   dateString: string
   totalDays: number
   reason: string
   attachmentUrl?: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: LeaveStatus
   actionTime?: string
   rejectReason?: string
 }
 
+interface ApiLeaveRequest {
+  id: string
+  member_id: string
+  leave_type_id: string
+  start_date: string
+  end_date: string
+  total_days: number
+  reason: string
+  status: LeaveStatus
+  approved_by?: string
+  approved_at?: string
+  reject_reason?: string
+  created_at: string
+  updated_at: string
+}
+
+interface ApiMember {
+  id: string
+  firstname: string
+  lastname: string
+  department?: string
+}
+
+interface ApiLeaveType {
+  id: string
+  name: string
+}
+
+interface ApiCurrentUser {
+  firstname?: string
+  lastname?: string
+  role?: string
+}
+
+interface ApiDashboardSummary {
+  pending_requests: number
+  active_leaves_today: number
+  approved_this_month: number
+  attendance_rate: number
+  total_members: number
+}
+
 definePageMeta({
-  middleware: ["require-auth"],
-});
+  middleware: ['require-auth'],
+})
 
-// ข้อมูลจำลองสถิติภาพรวม
-const activeLeavesToday = ref<number>(2)
-const approvedThisMonth = ref<number>(14)
-const attendanceRate = ref<number>(95.8)
+const isLoading = ref(false)
+const isActionLoading = ref(false)
 
-// ฟิลเตอร์คัดเลือกประวัติ
+const pendingRequestsCount = ref<number>(0)
+const activeLeavesToday = ref<number>(0)
+const approvedThisMonth = ref<number>(0)
+const attendanceRate = ref<number>(0)
+const totalMembers = ref<number>(0)
+
 const filterStatus = ref<'all' | 'approved' | 'rejected'>('all')
+const pendingRequests = ref<LeaveRequest[]>([])
+const actionedHistory = ref<LeaveRequest[]>([])
 
-// รายการใบลาที่ส่งเข้ามาค้างพิจารณา (Pending Approvals)
-const pendingRequests = ref<LeaveRequest[]>([
-  {
-    id: 101,
-    prefix: 'นาง',
-    firstName: 'สมศรี',
-    lastName: 'ดีใจ',
-    department: 'กลุ่มสาระการเรียนรู้คณิตศาสตร์',
-    type: 'personal',
-    dateString: '26 พ.ค. 2026 - 28 พ.ค. 2026',
-    totalDays: 3,
-    reason: 'มีธุระด่วนในการเดินทางไปทำนิติกรรมมรดกที่ต่างจังหวัด ร่วมกับครอบครัว',
-    status: 'pending'
-  },
-  {
-    id: 102,
-    prefix: 'นาย',
-    firstName: 'มานะ',
-    lastName: 'ขยันสอน',
-    department: 'กลุ่มสาระการเรียนรู้ภาษาไทย',
-    type: 'sick',
-    dateString: '25 พ.ค. 2026',
-    totalDays: 1,
-    reason: 'มีอาการเป็นไข้หวัดใหญ่ ปวดศีรษะรุนแรง และเสียงแหบแห้ง ไม่สามารถปฏิบัติการสอนได้ตามปกติ',
-    attachmentUrl: 'medical-certificate.pdf',
-    status: 'pending'
-  }
-])
-
-// รายการประวัติใบลาที่ผ่านการตรวจสอบแล้ว (Actioned Leaves History)
-const actionedHistory = ref<LeaveRequest[]>([
-  {
-    id: 50,
-    prefix: 'นางสาว',
-    firstName: 'มณฑา',
-    lastName: 'เพียรเรียน',
-    department: 'กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ',
-    type: 'vacation',
-    dateString: '12 พ.ค. 2026 - 15 พ.ค. 2026',
-    totalDays: 4,
-    reason: 'ลาพักผ่อนต่างจังหวัดร่วมกับครอบครัวประจำปี',
-    status: 'approved',
-    actionTime: '10 พ.ค. 2026, 09:15 น.'
-  },
-  {
-    id: 49,
-    prefix: 'นาย',
-    firstName: 'เกรียงไกร',
-    lastName: 'พละดี',
-    department: 'สุขศึกษาและพลศึกษา',
-    type: 'personal',
-    dateString: '02 พ.ค. 2026',
-    totalDays: 1,
-    reason: 'พาสมาชิกในครอบครัวไปพบแพทย์ตามนัดที่โรงพยาบาลศูนย์ประจำจังหวัด',
-    status: 'approved',
-    actionTime: '30 เม.ย. 2026, 16:45 น.'
-  },
-  {
-    id: 48,
-    prefix: 'นาง',
-    firstName: 'อุษา',
-    lastName: 'วาดศิลป์',
-    department: 'กลุ่มสาระการเรียนรู้ศิลปะ',
-    type: 'vacation',
-    dateString: '15 เม.ย. 2026',
-    totalDays: 1,
-    reason: 'ทำกิจธุระส่วนตัวที่กรุงเทพมหานคร',
-    status: 'rejected',
-    rejectReason: 'เนื่องจากมีตารางเวรคุมสอบปลายภาคเรียนพอดียากจะหาผู้ทดแทนได้ในวันทำการนั้น',
-    actionTime: '12 เม.ย. 2026, 11:30 น.'
-  }
-])
-
-// ตัวแปรควบคุม Modal ปฏิเสธการลา
 const openReject = ref<boolean>(false)
 const rejectReasonText = ref<string>('')
 const selectedReqForReject = ref<LeaveRequest | null>(null)
@@ -525,60 +518,204 @@ const confirmActionType = ref<'approve' | 'reject' | null>(null)
 const confirmReq = ref<LeaveRequest | null>(null)
 const previewLimit = 2
 
-const previewPendingRequests = computed<LeaveRequest[]>(() => {
-  return pendingRequests.value.slice(0, previewLimit)
+const memberMap = ref<Record<string, ApiMember>>({})
+const leaveTypeMap = ref<Record<string, ApiLeaveType>>({})
+const currentUser = ref<ApiCurrentUser | null>(null)
+
+const headerDisplayName = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  const fullName = `${first} ${last}`.trim()
+  return fullName ? `ผอ.${fullName}` : 'ผู้อำนวยการ'
 })
 
-// ตัวคัดกรองรายการตารางตามเงื่อนไข (Filtered History)
+const headerInitials = computed(() => {
+  const first = currentUser.value?.firstname?.trim() || ''
+  const last = currentUser.value?.lastname?.trim() || ''
+  const a = first.charAt(0)
+  const b = last.charAt(0)
+  const initials = `${a}${b}`.trim()
+  return initials || 'ผอ'
+})
+
+const previewPendingRequests = computed<LeaveRequest[]>(() => pendingRequests.value.slice(0, previewLimit))
+
 const filteredHistory = computed<LeaveRequest[]>(() => {
-  if (filterStatus.value === 'all') {
-    return actionedHistory.value
-  }
-  return actionedHistory.value.filter(item => item.status === filterStatus.value)
+  if (filterStatus.value === 'all') return actionedHistory.value
+  return actionedHistory.value.filter((item) => item.status === filterStatus.value)
 })
 
-// ฟังก์ชันแปลงข้อความภาษาไทยประเภทการลา
-const getLeaveTypeText = (type: string) => {
+const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+
+const formatDisplayDate = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}`
+}
+
+const formatDisplayDateTime = (dateText: string) => {
+  const d = new Date(dateText)
+  if (Number.isNaN(d.getTime())) return dateText
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${d.getDate()} ${monthShortTH[d.getMonth()]} ${d.getFullYear()}, ${hh}:${mm} น.`
+}
+
+const toLeaveTypeKey = (leaveTypeName?: string): LeaveTypeKey => {
+  const text = (leaveTypeName || '').toLowerCase()
+  if (text.includes('ป่วย') || text.includes('sick')) return 'sick'
+  if (text.includes('กิจ') || text.includes('personal')) return 'personal'
+  if (text.includes('พักผ่อน') || text.includes('vacation')) return 'vacation'
+  return 'other'
+}
+
+const mapLeaveRequest = (item: ApiLeaveRequest): LeaveRequest => {
+  const member = memberMap.value[item.member_id]
+  const leaveType = leaveTypeMap.value[item.leave_type_id]
+  const typeKey = toLeaveTypeKey(leaveType?.name)
+  const dateString = item.start_date === item.end_date
+    ? formatDisplayDate(item.start_date)
+    : `${formatDisplayDate(item.start_date)} - ${formatDisplayDate(item.end_date)}`
+
+  return {
+    id: item.id,
+    prefix: '',
+    firstName: member?.firstname || 'ไม่ทราบชื่อ',
+    lastName: member?.lastname || '',
+    department: member?.department || 'ไม่ระบุกลุ่มสาระ',
+    type: typeKey,
+    dateString,
+    totalDays: item.total_days,
+    reason: item.reason,
+    status: item.status,
+    actionTime: item.approved_at ? formatDisplayDateTime(item.approved_at) : formatDisplayDateTime(item.updated_at),
+    rejectReason: item.reject_reason,
+  }
+}
+
+const fetchReferenceData = async () => {
+  const [membersRes, leaveTypesRes] = await Promise.all([
+    $fetch<any>(`${BASE}/member`),
+    $fetch<any>(`${BASE}/system/leave-type`),
+  ])
+
+  const members = (membersRes?.data ?? []) as ApiMember[]
+  const leaveTypes = (leaveTypesRes?.data ?? []) as ApiLeaveType[]
+
+  memberMap.value = members.reduce<Record<string, ApiMember>>((acc, m) => {
+    acc[m.id] = m
+    return acc
+  }, {})
+
+  leaveTypeMap.value = leaveTypes.reduce<Record<string, ApiLeaveType>>((acc, lt) => {
+    acc[lt.id] = lt
+    return acc
+  }, {})
+}
+
+const fetchCurrentUser = async () => {
+  if (!import.meta.client) return
+
+  const token = localStorage.getItem('smartleave:access_token')
+  if (!token) return
+
+  const meRes = await $fetch<any>(`${BASE}/member/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  currentUser.value = (meRes?.data ?? null) as ApiCurrentUser | null
+}
+
+const computeStats = (allRequests: ApiLeaveRequest[]) => {
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+
+  const todayApproved = allRequests.filter((req) => {
+    if (req.status !== 'approved') return false
+    const start = new Date(req.start_date)
+    const end = new Date(req.end_date)
+    return !Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start <= endOfToday && end >= startOfToday
+  }).length
+
+  const approvedThisMonthCount = allRequests.filter((req) => {
+    if (req.status !== 'approved') return false
+    const actionAt = req.approved_at ? new Date(req.approved_at) : new Date(req.updated_at)
+    return !Number.isNaN(actionAt.getTime()) && actionAt.getMonth() === now.getMonth() && actionAt.getFullYear() === now.getFullYear()
+  }).length
+
+  const memberCount = Object.keys(memberMap.value).length
+  const attendance = memberCount > 0 ? Math.max(0, ((memberCount - todayApproved) / memberCount) * 100) : 0
+
+  activeLeavesToday.value = todayApproved
+  approvedThisMonth.value = approvedThisMonthCount
+  attendanceRate.value = Number(attendance.toFixed(1))
+  totalMembers.value = memberCount
+  pendingRequestsCount.value = allRequests.filter((req) => req.status === 'pending').length
+}
+
+const fetchDashboardSummary = async (): Promise<boolean> => {
+  try {
+    const summaryRes = await $fetch<any>(`${BASE}/dashboard/summary`)
+    const summary = (summaryRes?.data ?? null) as ApiDashboardSummary | null
+    if (!summary) return false
+
+    pendingRequestsCount.value = Number(summary.pending_requests || 0)
+    activeLeavesToday.value = Number(summary.active_leaves_today || 0)
+    approvedThisMonth.value = Number(summary.approved_this_month || 0)
+    attendanceRate.value = Number(summary.attendance_rate || 0)
+    totalMembers.value = Number(summary.total_members || 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const fetchDashboardData = async () => {
+  isLoading.value = true
+  try {
+    await Promise.all([fetchCurrentUser(), fetchReferenceData()])
+    const leaveRes = await $fetch<any>(`${BASE}/leave-request`)
+    const allRequests = (leaveRes?.data ?? []) as ApiLeaveRequest[]
+
+    pendingRequests.value = allRequests
+      .filter((item) => item.status === 'pending')
+      .map(mapLeaveRequest)
+
+    actionedHistory.value = allRequests
+      .filter((item) => item.status === 'approved' || item.status === 'rejected')
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      .map(mapLeaveRequest)
+
+    const hasSummary = await fetchDashboardSummary()
+    if (!hasSummary) {
+      computeStats(allRequests)
+    }
+  } catch (error) {
+    addToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const getLeaveTypeText = (type: LeaveTypeKey) => {
   if (type === 'sick') return 'ลาป่วย'
   if (type === 'personal') return 'ลากิจ'
   if (type === 'vacation') return 'ลาพักผ่อน'
-  return type
+  return 'ลาอื่นๆ'
 }
 
-// สไตล์ประเภทการลา
-const getLeaveTypeClass = (type: string) => {
-  switch (type) {
-    case 'sick': return 'text-emerald-600 bg-emerald-50'
-    case 'personal': return 'text-amber-600 bg-amber-50'
-    default: return 'text-blue-600 bg-blue-50'
-  }
+const getLeaveTypeClass = (type: LeaveTypeKey) => {
+  if (type === 'sick') return 'text-emerald-600 bg-emerald-50'
+  if (type === 'personal') return 'text-amber-600 bg-amber-50'
+  if (type === 'vacation') return 'text-blue-600 bg-blue-50'
+  return 'text-slate-600 bg-slate-100'
 }
 
-// ฟังก์ชันจำลองเปิดไฟล์แนบ
 const viewAttachment = (fileName: string) => {
-  addToast('info', 'เปิดไฟล์แนบ', `จำลองการเปิดดูไฟล์เอกสาร: ${fileName}`)
-}
-
-// ฟังก์ชันสำหรับ อนุมัติใบคำขอลา
-const approveRequest = (id: number) => {
-  const req = pendingRequests.value.find(p => p.id === id)
-  if (!req) return
-
-  // อัปเดตสถานะและข้อมูลการกระทำ
-  req.status = 'approved'
-  req.actionTime = 'เมื่อสักครู่นี้'
-
-  // ย้ายยัดเข้าตารางประวัติย้อนหลัง
-  actionedHistory.value.unshift({ ...req })
-
-  // นำออกจากรายการค้างพิจารณา
-  pendingRequests.value = pendingRequests.value.filter(p => p.id !== id)
-
-  // อัปเดตสถิติด้านบนแบบเรียลไทม์
-  approvedThisMonth.value++
-  activeLeavesToday.value++
-
-  addToast('success', 'อนุมัติใบลาสำเร็จ', `อนุมัติใบลาของ "${req.prefix}${req.firstName} ${req.lastName}" และส่งผลกลับไปยังคุณครูแล้ว`)
+  addToast('info', 'เปิดไฟล์แนบ', `ยังไม่มีไฟล์แนบจริงสำหรับรายการนี้: ${fileName}`)
 }
 
 const openApproveConfirm = (req: LeaveRequest) => {
@@ -587,7 +724,6 @@ const openApproveConfirm = (req: LeaveRequest) => {
   openConfirm.value = true
 }
 
-// ฟังก์ชันเปิด Modal สำหรับปฏิเสธใบคำขอลา
 const openRejectModal = (req: LeaveRequest) => {
   selectedReqForReject.value = req
   rejectReasonText.value = ''
@@ -601,7 +737,7 @@ const closeRejectModal = () => {
 }
 
 const openRejectConfirm = () => {
-  if (!selectedReqForReject.value || !rejectReasonText.value) {
+  if (!selectedReqForReject.value || !rejectReasonText.value.trim()) {
     addToast('warning', 'ยังไม่กรอกเหตุผล', 'กรุณาระบุเหตุผลก่อนยืนยันการปฏิเสธ')
     return
   }
@@ -617,42 +753,50 @@ const closeConfirmModal = () => {
   confirmReq.value = null
 }
 
-// กดยืนยันจาก Modal เพื่อดำเนินการปฏิเสธใบลา
-const submitReject = () => {
-  if (!selectedReqForReject.value || !rejectReasonText.value) {
-    addToast('warning', 'ยังไม่กรอกเหตุผล', 'กรุณาระบุเหตุผลก่อนยืนยันการปฏิเสธ')
-    return
+const updateLeaveStatus = async (id: string, status: LeaveStatus, rejectReason?: string) => {
+  isActionLoading.value = true
+  try {
+    await $fetch(`${BASE}/leave-request/${id}`, {
+      method: 'PATCH',
+      body: {
+        status,
+        reject_reason: rejectReason || '',
+      },
+    })
+
+    await fetchDashboardData()
+  } finally {
+    isActionLoading.value = false
   }
-
-  const req = selectedReqForReject.value
-  
-  // อัปเดตสถานะ ปฏิเสธการลา
-  req.status = 'rejected'
-  req.rejectReason = rejectReasonText.value
-  req.actionTime = 'เมื่อสักครู่นี้'
-
-  // บันทึกเข้าประวัติ
-  actionedHistory.value.unshift({ ...req })
-
-  // ถอดออกจากรายการที่รอพิจารณา
-  pendingRequests.value = pendingRequests.value.filter(p => p.id !== req.id)
-
-  addToast('info', 'ปฏิเสธใบคำร้องเรียบร้อย', `ส่งผลปฏิเสธใบคำขอลาของคุณครู "${req.firstName}" พร้อมเหตุผลแล้ว`)
-  closeRejectModal()
 }
 
-const confirmAction = () => {
-  if (!confirmReq.value || !confirmActionType.value) return
+const confirmAction = async () => {
+  if (!confirmReq.value || !confirmActionType.value || isActionLoading.value) return
 
-  if (confirmActionType.value === 'approve') {
-    approveRequest(confirmReq.value.id)
+  try {
+    if (confirmActionType.value === 'approve') {
+      await updateLeaveStatus(confirmReq.value.id, 'approved')
+      addToast('success', 'อนุมัติใบลาสำเร็จ', `อนุมัติใบลาของ "${confirmReq.value.firstName}" เรียบร้อยแล้ว`)
+    } else {
+      const reason = rejectReasonText.value.trim()
+      if (!reason) {
+        addToast('warning', 'ยังไม่กรอกเหตุผล', 'กรุณาระบุเหตุผลก่อนยืนยันการปฏิเสธ')
+        return
+      }
+      await updateLeaveStatus(confirmReq.value.id, 'rejected', reason)
+      addToast('info', 'ปฏิเสธใบคำร้องเรียบร้อย', `ส่งผลปฏิเสธใบคำขอของ "${confirmReq.value.firstName}" พร้อมเหตุผลแล้ว`)
+      closeRejectModal()
+    }
+  } catch (error) {
+    addToast('error', 'อัปเดตสถานะไม่สำเร็จ', 'ไม่สามารถบันทึกผลการพิจารณาได้ กรุณาลองใหม่อีกครั้ง')
+  } finally {
+    closeConfirmModal()
   }
-  else {
-    submitReject()
-  }
-
-  closeConfirmModal()
 }
+
+onMounted(() => {
+  fetchDashboardData()
+})
 </script>
 
 <style scoped>

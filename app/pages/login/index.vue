@@ -46,10 +46,10 @@
           <AppInput
             id="email"
             v-model="email"
-            label="อีเมลบุคลากร"
-            type="email"
+            label="อีเมล"
+            type="text"
             required
-            placeholder="teacher@saard.ac.th"
+            placeholder="user@example.com"
             :error="emailError"
           />
 
@@ -226,15 +226,15 @@ const passwordError = ref("");
 
 const validateEmail = () => {
   emailError.value = "";
+  const currentEmail = email.value.trim();
 
-  if (!email.value) {
-    emailError.value = "กรุณากรอกอีเมลสะกดของโรงเรียน";
+  if (!currentEmail) {
+    emailError.value = "กรุณากรอกอีเมล";
     return;
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email.value)) {
-    emailError.value = "รูปแบบอีเมลไม่ถูกต้อง (เช่น user@saard.ac.th)";
+  if (!currentEmail.includes("@")) {
+    emailError.value = "อีเมลต้องมีเครื่องหมาย @";
   }
 };
 

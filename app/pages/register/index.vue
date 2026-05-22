@@ -31,19 +31,25 @@
               <div class="grid grid-cols-2 gap-3">
                 <div>
                   <label for="gender" class="block text-xs font-semibold text-slate-700">เพศ <span class="text-rose-500">*</span></label>
-                  <select id="gender" v-model="regForm.genderId" required
-                    class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
-                    <option value="" disabled>เลือกเพศ</option>
-                    <option v-for="g in genders" :key="g.id" :value="g.id">{{ g.name }}</option>
-                  </select>
+                  <AppDropdown
+                    id="gender"
+                    v-model="regForm.genderId"
+                    placeholder="เลือกเพศ"
+                    :options="genders.map((g) => ({ label: g.name, value: g.id }))"
+                  />
                 </div>
                 <div>
                   <label for="prefix" class="block text-xs font-semibold text-slate-700">คำนำหน้า <span class="text-rose-500">*</span></label>
-                  <select id="prefix" v-model="regForm.prefixId" required :disabled="!regForm.genderId || prefixes.length === 0"
-                    class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all">
-                    <option value="" disabled>เลือก</option>
-                    <option v-for="p in prefixes" :key="p.id" :value="p.id">{{ p.name }}</option>
-                  </select>
+                  <AppDropdown
+                    id="prefix"
+                    v-model="regForm.prefixId"
+                    placeholder="เลือก"
+                    :disabled="!regForm.genderId || prefixes.length === 0"
+                    :page-size="8"
+                    :allow-page-size-select="true"
+                    :page-size-options="[5, 8, 10, 15]"
+                    :options="prefixes.map((p) => ({ label: p.name, value: p.id }))"
+                  />
                 </div>
               </div>
 
@@ -64,32 +70,33 @@
               <!-- ตำแหน่ง -->
               <div>
                 <label for="role" class="block text-xs font-semibold text-slate-700">ตำแหน่ง <span class="text-rose-500">*</span></label>
-                <select id="role" v-model="regForm.role" required
-                  class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
-                  <option value="teacher">ครู</option>
-                  <!-- <option value="director">ผู้อำนวยการ</option> -->
-                </select>
+                <AppDropdown
+                  id="role"
+                  v-model="regForm.role"
+                  :options="roleOptions.map((r) => ({ label: r.name, value: r.id }))"
+                />
+              </div>
+
+              <div>
+                <label for="department" class="block text-xs font-semibold text-slate-700">กลุ่มสาระการเรียนรู้ <span class="text-rose-500">*</span></label>
+                <AppDropdown
+                  id="department"
+                  v-model="regForm.department"
+                  placeholder="เลือกกลุ่มสาระการเรียนรู้"
+                  :options="departmentOptions.map((d) => ({ label: d.name, value: d.id }))"
+                />
               </div>
 
               <!-- อีเมล -->
               <div>
-                <label for="regEmail" class="block text-xs font-semibold text-slate-700">อีเมลบุคลากร (.saard.ac.th) <span class="text-rose-500">*</span></label>
-                <input id="regEmail" v-model="regForm.email" type="email" required placeholder="user@saard.ac.th"
+                <label for="regEmail" class="block text-xs font-semibold text-slate-700">อีเมล <span class="text-rose-500">*</span></label>
+                <input id="regEmail" v-model="regForm.email" type="text" inputmode="email" required placeholder="user@example.com"
                   class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   :class="{ 'border-rose-400': errors.email }"
                   @input="validateEmail" />
                 <p v-if="errors.email" class="mt-1 text-xs text-rose-500 font-medium">{{ errors.email }}</p>
               </div>
 
-              <!-- รหัสผ่าน -->
-              <div>
-                <label for="regPassword" class="block text-xs font-semibold text-slate-700">รหัสผ่าน <span class="text-rose-500">*</span></label>
-                <input id="regPassword" v-model="regForm.password" type="password" required placeholder="ขั้นต่ำ 6 อักขระ"
-                  class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  :class="{ 'border-rose-400': errors.password }"
-                  @input="validatePassword" />
-                <p v-if="errors.password" class="mt-1 text-xs text-rose-500 font-medium">{{ errors.password }}</p>
-              </div>
             </div>
 
             <!-- คอลัมน์ที่ 2: ที่อยู่ -->
@@ -102,31 +109,39 @@
               <!-- จังหวัด -->
               <div>
                 <label for="province" class="block text-xs font-semibold text-slate-700">จังหวัด <span class="text-rose-500">*</span></label>
-                <select id="province" v-model="regForm.provinceId" required
-                  class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all">
-                  <option value="" disabled>เลือกจังหวัด</option>
-                  <option v-for="prov in provinces" :key="prov.id" :value="prov.id">{{ prov.name }}</option>
-                </select>
+                <AppDropdown
+                  id="province"
+                  v-model="regForm.provinceId"
+                  placeholder="เลือกจังหวัด"
+                  :page-size="20"
+                  :allow-page-size-select="true"
+                  :page-size-options="[10, 20, 30, 50]"
+                  :options="provinces.map((prov) => ({ label: prov.name, value: prov.id }))"
+                />
               </div>
 
               <!-- อำเภอ -->
               <div>
                 <label for="district" class="block text-xs font-semibold text-slate-700">อำเภอ/เขต <span class="text-rose-500">*</span></label>
-                <select id="district" v-model="regForm.districtId" required :disabled="!regForm.provinceId || districts.length === 0"
-                  class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all">
-                  <option value="" disabled>เลือกอำเภอ</option>
-                  <option v-for="dist in districts" :key="dist.id" :value="dist.id">{{ dist.name }}</option>
-                </select>
+                <AppDropdown
+                  id="district"
+                  v-model="regForm.districtId"
+                  placeholder="เลือกอำเภอ"
+                  :disabled="!regForm.provinceId || districts.length === 0"
+                  :options="districts.map((dist) => ({ label: dist.name, value: dist.id }))"
+                />
               </div>
 
               <!-- ตำบล -->
               <div>
                 <label for="subDistrict" class="block text-xs font-semibold text-slate-700">ตำบล/แขวง <span class="text-rose-500">*</span></label>
-                <select id="subDistrict" v-model="regForm.subDistrictId" required :disabled="!regForm.districtId || subDistricts.length === 0"
-                  class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 disabled:cursor-not-allowed transition-all">
-                  <option value="" disabled>เลือกตำบล</option>
-                  <option v-for="sub in subDistricts" :key="sub.id" :value="sub.id">{{ sub.name }}</option>
-                </select>
+                <AppDropdown
+                  id="subDistrict"
+                  v-model="regForm.subDistrictId"
+                  placeholder="เลือกตำบล"
+                  :disabled="!regForm.districtId || subDistricts.length === 0"
+                  :options="subDistricts.map((sub) => ({ label: sub.name, value: sub.id }))"
+                />
               </div>
 
               <!-- รหัสไปรษณีย์ (auto-fill) -->
@@ -143,6 +158,27 @@
               </div>
             </div>
 
+          </div>
+
+          <!-- รหัสผ่าน & ยืนยันรหัสผ่าน (แถวเต็มความกว้าง) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="regPassword" class="block text-xs font-semibold text-slate-700">รหัสผ่าน <span class="text-rose-500">*</span></label>
+              <input id="regPassword" v-model="regForm.password" type="password" required placeholder="ขั้นต่ำ 6 อักขระ"
+                class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                :class="{ 'border-rose-400': errors.password }"
+                @input="validatePassword" />
+              <p v-if="errors.password" class="mt-1 text-xs text-rose-500 font-medium">{{ errors.password }}</p>
+            </div>
+
+            <div>
+              <label for="regConfirmPassword" class="block text-xs font-semibold text-slate-700">ยืนยันรหัสผ่าน <span class="text-rose-500">*</span></label>
+              <input id="regConfirmPassword" v-model="regForm.confirmPassword" type="password" required placeholder="กรอกรหัสผ่านอีกครั้ง"
+                class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                :class="{ 'border-rose-400': errors.confirmPassword }"
+                @input="validateConfirmPassword" />
+              <p v-if="errors.confirmPassword" class="mt-1 text-xs text-rose-500 font-medium">{{ errors.confirmPassword }}</p>
+            </div>
           </div>
 
           <!-- ปุ่มด้านล่าง -->
@@ -192,6 +228,19 @@ const provinces = ref<Item[]>([])
 const districts = ref<Item[]>([])
 const subDistricts = ref<Item[]>([])
 const zipcodes  = ref<Item[]>([])
+const roleOptions: Item[] = [
+  { id: 'teacher', name: 'ครู' },
+]
+const departmentOptions: Item[] = [
+  { id: 'ภาษาไทย', name: 'ภาษาไทย' },
+  { id: 'คณิตศาสตร์', name: 'คณิตศาสตร์' },
+  { id: 'วิทยาศาสตร์และเทคโนโลยี', name: 'วิทยาศาสตร์และเทคโนโลยี' },
+  { id: 'สังคมศึกษา ศาสนา และวัฒนธรรม', name: 'สังคมศึกษา ศาสนา และวัฒนธรรม' },
+  { id: 'สุขศึกษาและพลศึกษา', name: 'สุขศึกษาและพลศึกษา' },
+  { id: 'ศิลปะ', name: 'ศิลปะ' },
+  { id: 'การงานอาชีพ', name: 'การงานอาชีพ' },
+  { id: 'ภาษาต่างประเทศ', name: 'ภาษาต่างประเทศ' },
+]
 
 // ---------- Form state ----------
 const regForm = ref({
@@ -199,9 +248,11 @@ const regForm = ref({
   prefixId:      '',
   firstName:     '',
   lastName:      '',
+  department:    '',
   role:          'teacher',
   email:         '',
   password:      '',
+  confirmPassword: '',
   provinceId:    '',
   districtId:    '',
   subDistrictId: '',
@@ -209,7 +260,7 @@ const regForm = ref({
   zipcodeName:   '',
 })
 
-const errors = ref({ email: '', password: '' })
+const errors = ref({ email: '', password: '', confirmPassword: '' })
 
 // ---------- Load master data ----------
 const loadGenders = async () => {
@@ -291,12 +342,13 @@ watch(() => regForm.value.subDistrictId, async (id) => {
 // ---------- Validation ----------
 const validateEmail = () => {
   errors.value.email = ''
-  if (!regForm.value.email) {
+  const email = regForm.value.email.trim()
+  if (!email) {
     errors.value.email = 'กรุณากรอกอีเมล'
     return
   }
-  if (!regForm.value.email.endsWith('@saard.ac.th')) {
-    errors.value.email = 'กรุณาใช้อีเมลทางการของโรงเรียน (@saard.ac.th) เท่านั้น'
+  if (!email.includes('@')) {
+    errors.value.email = 'อีเมลต้องมีเครื่องหมาย @'
   }
 }
 
@@ -309,23 +361,36 @@ const validatePassword = () => {
   if (regForm.value.password.length < 6) {
     errors.value.password = 'รหัสผ่านต้องมีความยาวไม่ต่ำกว่า 6 ตัวอักษร'
   }
+  validateConfirmPassword()
 }
 
-const hasErrors = computed(() => !!errors.value.email || !!errors.value.password)
+const validateConfirmPassword = () => {
+  errors.value.confirmPassword = ''
+  if (!regForm.value.confirmPassword) {
+    errors.value.confirmPassword = 'กรุณายืนยันรหัสผ่าน'
+    return
+  }
+  if (regForm.value.password !== regForm.value.confirmPassword) {
+    errors.value.confirmPassword = 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน'
+  }
+}
+
+const hasErrors = computed(() => !!errors.value.email || !!errors.value.password || !!errors.value.confirmPassword)
 
 // ---------- Submit ----------
 const handleRegister = async () => {
   validateEmail()
   validatePassword()
+  validateConfirmPassword()
 
   if (hasErrors.value) {
-    addToast('error', 'ข้อมูลลงทะเบียนไม่ถูกต้อง', errors.value.email || errors.value.password)
+    addToast('error', 'ข้อมูลลงทะเบียนไม่ถูกต้อง', errors.value.email || errors.value.password || errors.value.confirmPassword)
     return
   }
 
   const f = regForm.value
-  if (!f.genderId || !f.prefixId || !f.provinceId || !f.districtId || !f.subDistrictId || !f.zipcodeId) {
-    addToast('error', 'ข้อมูลไม่ครบ', 'กรุณาเลือกเพศ คำนำหน้า และที่อยู่ให้ครบถ้วน')
+  if (!f.genderId || !f.prefixId || !f.department || !f.provinceId || !f.districtId || !f.subDistrictId || !f.zipcodeId) {
+    addToast('error', 'ข้อมูลไม่ครบ', 'กรุณาเลือกเพศ คำนำหน้า กลุ่มสาระการเรียนรู้ และที่อยู่ให้ครบถ้วน')
     return
   }
 
@@ -340,6 +405,7 @@ const handleRegister = async () => {
         password:        f.password,
         firstname:       f.firstName,
         lastname:        f.lastName,
+        department:      f.department,
         role:            f.role,
         province_id:     f.provinceId,
         district_id:     f.districtId,

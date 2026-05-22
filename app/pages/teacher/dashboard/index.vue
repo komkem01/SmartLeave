@@ -22,6 +22,7 @@
           <div class="w-9 h-9 rounded-full bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-slate-700">
             สช
           </div>
+          <AppLogoutButton />
         </div>
       </div>
     </nav>

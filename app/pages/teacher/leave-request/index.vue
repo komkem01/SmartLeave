@@ -1,6 +1,10 @@
 <template>
   <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-10 font-sans antialiased">
     <div class="w-full max-w-7xl mx-auto">
+      <div class="mb-4 flex justify-end">
+        <AppLogoutButton />
+      </div>
+
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/20 mb-4">
           <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
