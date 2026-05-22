@@ -144,6 +144,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 
+definePageMeta({
+  middleware: ['require-auth']
+})
+
 type LeaveType = 'sick' | 'personal' | 'vacation'
 type LeaveStatus = 'pending' | 'approved' | 'rejected'
 

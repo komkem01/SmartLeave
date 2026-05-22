@@ -30,7 +30,7 @@
                 >
                 <span
                   class="text-3xs font-semibold text-slate-500 tracking-wider uppercase"
-                  >โรงเรียนสะอาดประชาสรรค์</span
+                  >โรงเรียนสะอาดประชาสรร</span
                 >
               </div>
             </div>

@@ -33,7 +33,7 @@
           <span
             class="block mt-0.5 font-semibold text-slate-700 text-xs tracking-wider uppercase"
           >
-            โรงเรียนสะอาดประชาสรรค์
+            โรงเรียนสะอาดประชาสรร
           </span>
         </p>
       </div>
@@ -109,7 +109,7 @@
             </AppInput>
           </div>
 
-          <!-- กล่องข้อมูลแนะนำรหัสผ่านสำหรับเดโม -->
+          <!-- กล่องข้อมูลแนะนำรหัสผ่านสำหรับเดโม
           <div
             class="rounded-lg bg-blue-50/60 p-3 border border-blue-100 text-xs text-slate-600 space-y-1"
           >
@@ -135,7 +135,7 @@
                 >123456</code
               >
             </p>
-          </div>
+          </div> -->
 
           <!-- ปุ่มส่งข้อมูล (Submit Button) -->
           <div class="pt-2">
@@ -194,7 +194,7 @@
     <!-- ส่วนท้ายด้านล่าง -->
     <div class="mt-8 text-center">
       <p class="text-xs text-slate-400 tracking-wide">
-        &copy; 2026 โรงเรียนสะอาดประชาสรรค์. สงวนลิขสิทธิ์ระบบสารสนเทศภายใน
+        &copy; 2026 โรงเรียนสะอาดประชาสรร. สงวนลิขสิทธิ์ระบบสารสนเทศภายใน
       </p>
     </div>
   </div>
@@ -219,19 +219,7 @@ const email = ref("");
 const password = ref("");
 const showPassword = ref(false);
 const isLoading = ref(false);
-
-const demoAccounts = {
-  "somchai@saard.ac.th": {
-    roleName: "ครู",
-    displayName: "สมชาย",
-    redirectTo: "/teacher/dashboard",
-  },
-  "director@saard.ac.th": {
-    roleName: "ผู้อำนวยการ",
-    displayName: "วันชัย",
-    redirectTo: "/director/dashboard",
-  },
-};
+const config = useRuntimeConfig();
 
 const emailError = ref("");
 const passwordError = ref("");
@@ -279,28 +267,65 @@ const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const loginResponse = await $fetch(`${config.public.BASE_API}/public/auth/login`, {
+      method: "POST",
+      body: {
+        email: email.value.trim(),
+        password: password.value,
+      },
+    });
 
-    const normalizedEmail = email.value.trim().toLowerCase();
-    const account = demoAccounts[normalizedEmail] || null;
+    const accessToken = loginResponse?.data?.access_token;
+    const tokenType = loginResponse?.data?.token_type || "Bearer";
+    const expiresAt = loginResponse?.data?.expires_at;
 
-    if (!account || password.value !== "123456") {
-      throw new Error(
-        "อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบข้อมูลเดโมแล้วลองใหม่อีกครั้ง",
-      );
+    if (process.client && accessToken) {
+      localStorage.setItem("smartleave:access_token", accessToken);
+      localStorage.setItem("smartleave:token_type", tokenType);
+      if (expiresAt) {
+        localStorage.setItem("smartleave:expires_at", String(expiresAt));
+      }
     }
+
+    if (!accessToken) {
+      throw new Error("ไม่พบข้อมูล token");
+    }
+
+    const meResponse = await $fetch(`${config.public.BASE_API}/member/me`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const account = meResponse?.data;
+    if (!account) {
+      throw new Error("ไม่พบข้อมูลผู้ใช้งาน");
+    }
+
+    const isDirector = account.role === "director";
+    const redirectTo = isDirector ? "/director/dashboard" : "/teacher/dashboard";
+    const roleName = isDirector ? "ผู้อำนวยการ" : "ครู";
+    const displayName = `${account.firstname || ""} ${account.lastname || ""}`.trim();
 
     addToast(
       "success",
       "เข้าสู่ระบบสำเร็จ",
-      `ยินดีต้อนรับ${account.roleName}${account.displayName} สู่ระบบ SmartLeave`,
+      `ยินดีต้อนรับ${roleName}${displayName} สู่ระบบ SmartLeave`,
     );
-    await navigateTo(account.redirectTo);
+    await navigateTo(redirectTo);
   } catch (error) {
+    const statusCode =
+      typeof error === "object" && error !== null
+        ? Number(error?.statusCode || error?.data?.statusCode || 0)
+        : 0;
+    const message =
+      statusCode === 401
+        ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+        : "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง";
+
     addToast(
       "error",
       "เข้าสู่ระบบไม่สำเร็จ",
-      error instanceof Error ? error.message : "เกิดข้อผิดพลาดบางอย่าง",
+      message,
     );
   } finally {
     isLoading.value = false;
