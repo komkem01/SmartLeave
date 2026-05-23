@@ -139,54 +139,6 @@
                 </div>
               </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <div>
-                <label class="block text-xs text-slate-700 mb-1">เวลาเริ่มลา</label>
-                <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </span>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-2xs font-semibold uppercase tracking-wider text-slate-400">เวลาเริ่ม</p>
-                    <input
-                      v-model="form.startTime"
-                      type="text"
-                      inputmode="numeric"
-                      maxlength="5"
-                      placeholder="08:30"
-                      class="mt-0.5 block w-full bg-transparent text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                      @input="onTimeInput('start', $event)"
-                      @blur="onTimeBlur('start')"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label class="block text-xs text-slate-700 mb-1">เวลาสิ้นสุดลา</label>
-                <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </span>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-2xs font-semibold uppercase tracking-wider text-slate-400">เวลาสิ้นสุด</p>
-                    <input
-                      v-model="form.endTime"
-                      type="text"
-                      inputmode="numeric"
-                      maxlength="5"
-                      placeholder="17:30"
-                      class="mt-0.5 block w-full bg-transparent text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
-                      @input="onTimeInput('end', $event)"
-                      @blur="onTimeBlur('end')"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
             <p v-if="errors.dateRange" class="mt-2 text-xs text-rose-500 font-medium">{{ errors.dateRange }}</p>
           </section>
 
@@ -416,15 +368,10 @@ const getTodayLocalDate = () => {
 }
 
 const defaultLeaveDate = getTodayLocalDate()
-const defaultStartTime = '08:00'
-const defaultEndTime = '16:00'
-
 const form = ref({
   type: '',
   startDate: defaultLeaveDate,
   endDate: defaultLeaveDate,
-  startTime: defaultStartTime,
-  endTime: defaultEndTime,
   location: '',
   province: '',
   district: '',
@@ -434,58 +381,6 @@ const form = ref({
   reason: '',
   attachment: null as File | null
 })
-
-const normalizeTime = (timeText: string, fallback = '00:00') => {
-  const [hourRaw, minuteRaw] = (timeText || fallback).split(':')
-  const hour = String(Number(hourRaw || 0)).padStart(2, '0')
-  const minute = String(Number(minuteRaw || 0)).padStart(2, '0')
-  return `${hour}:${minute}`
-}
-
-const normalizeTypedTime = (timeText: string, fallback: string) => {
-  const digits = (timeText || '').replace(/\D/g, '').slice(0, 4)
-  if (!digits) return fallback
-
-  if (digits.length <= 2) {
-    return `${digits.padStart(2, '0')}:00`
-  }
-
-  if (digits.length === 3) {
-    return `${digits.slice(0, 1).padStart(2, '0')}:${digits.slice(1).padEnd(2, '0')}`
-  }
-
-  return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`
-}
-
-const onTimeInput = (target: 'start' | 'end', event: Event) => {
-  const input = event.target as HTMLInputElement
-  const digits = input.value.replace(/\D/g, '').slice(0, 4)
-
-  let formatted = digits
-  if (digits.length > 2) {
-    formatted = `${digits.slice(0, 2)}:${digits.slice(2)}`
-  }
-
-  input.value = formatted
-
-  if (target === 'start') {
-    form.value.startTime = formatted
-  } else {
-    form.value.endTime = formatted
-  }
-
-  validateDateRange()
-}
-
-const onTimeBlur = (target: 'start' | 'end') => {
-  if (target === 'start') {
-    form.value.startTime = normalizeTypedTime(form.value.startTime, defaultStartTime)
-  } else {
-    form.value.endTime = normalizeTypedTime(form.value.endTime, defaultEndTime)
-  }
-
-  validateDateRange()
-}
 
 const usedDaysByLeaveType = computed<Record<string, number>>(() => {
   const usage: Record<string, number> = {}
@@ -513,18 +408,18 @@ const errors = ref({
 const validateDateRange = () => {
   errors.value.dateRange = ''
 
-  if (!form.value.startDate || !form.value.endDate || !form.value.startTime || !form.value.endTime) return
+  if (!form.value.startDate || !form.value.endDate) return
 
-  const start = new Date(`${form.value.startDate}T${form.value.startTime}:00`)
-  const end = new Date(`${form.value.endDate}T${form.value.endTime}:00`)
+  const start = new Date(`${form.value.startDate}T00:00:00`)
+  const end = new Date(`${form.value.endDate}T00:00:00`)
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    errors.value.dateRange = 'รูปแบบวันที่หรือเวลาไม่ถูกต้อง'
+    errors.value.dateRange = 'รูปแบบวันที่ไม่ถูกต้อง'
     return
   }
 
-  if (start >= end) {
-    errors.value.dateRange = 'วันและเวลาสิ้นสุดลาต้องมากกว่าวันและเวลาเริ่มลา'
+  if (start > end) {
+    errors.value.dateRange = 'วันที่สิ้นสุดลาต้องมากกว่าหรือเท่ากับวันที่เริ่มลา'
   }
 }
 
@@ -746,11 +641,6 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!form.value.startTime || !form.value.endTime) {
-    addToast('warning', 'ข้อมูลไม่ครบ', 'กรุณาเลือกเวลาเริ่มลาและเวลาสิ้นสุดลา')
-    return
-  }
-
   validateDateRange()
   if (errors.value.dateRange) {
     addToast('warning', 'วันที่ลาไม่ถูกต้อง', errors.value.dateRange)
@@ -773,10 +663,10 @@ const handleSubmit = async () => {
     return
   }
 
-  const start = new Date(`${form.value.startDate}T${form.value.startTime}:00`)
-  const end = new Date(`${form.value.endDate}T${form.value.endTime}:00`)
-  const totalMinutes = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 60000))
-  const totalDays = Number((totalMinutes / 480).toFixed(4))
+  const start = new Date(`${form.value.startDate}T00:00:00`)
+  const end = new Date(`${form.value.endDate}T00:00:00`)
+  const diffDays = Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000))
+  const totalDays = Math.max(1, diffDays + 1)
 
   isLoading.value = true
   try {
@@ -788,8 +678,6 @@ const handleSubmit = async () => {
         leave_type_id: form.value.type,
         start_date: form.value.startDate,
         end_date: form.value.endDate,
-        start_at: `${form.value.startDate}T${form.value.startTime}:00`,
-        end_at: `${form.value.endDate}T${form.value.endTime}:00`,
         total_days: totalDays,
         reason: form.value.reason,
         ...(uploadedRefID.value ? { ref_id: uploadedRefID.value } : {}),
