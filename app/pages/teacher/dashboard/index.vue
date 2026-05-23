@@ -37,8 +37,8 @@
           <h1 class="text-2xl font-extrabold text-slate-950">สวัสดีครับ, {{ greetingName }}</h1>
           <p class="text-sm text-slate-500 mt-1">โควต้าการลาดึงจากการตั้งค่าประเภทลาในระบบ</p>
           <div class="mt-3 flex flex-wrap gap-2 text-xs">
-            <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">ใช้แล้ว {{ totalUsedRequests }} วัน</span>
-            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">คงเหลือ {{ totalRemainingRequests }} วัน</span>
+            <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">ใช้แล้ว {{ formatDay(totalUsedRequests) }} วัน</span>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">คงเหลือ {{ formatDay(totalRemainingRequests) }} วัน</span>
           </div>
         </div>
 
@@ -67,12 +67,12 @@
           >
             <div class="flex items-center justify-between mb-3">
               <p class="text-sm font-bold text-slate-900">{{ policy.label }}</p>
-              <span class="text-xs px-2 py-0.5 rounded-full" :class="policy.badgeClass">{{ policy.usedRequests }}/{{ policy.maxRequests }} วัน</span>
+              <span class="text-xs px-2 py-0.5 rounded-full" :class="policy.badgeClass">{{ formatDay(policy.usedRequests) }}/{{ formatDay(policy.maxRequests) }} วัน</span>
             </div>
             <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
               <div class="h-full rounded-full transition-all" :class="policy.barClass" :style="{ width: `${policy.maxRequests > 0 ? Math.min(100, (policy.usedRequests / policy.maxRequests) * 100) : 0}%` }"></div>
             </div>
-            <p class="mt-3 text-xs text-slate-500">คงเหลือ {{ Math.max(0, policy.maxRequests - policy.usedRequests) }} วัน</p>
+            <p class="mt-3 text-xs text-slate-500">คงเหลือ {{ formatDay(Math.max(0, policy.maxRequests - policy.usedRequests)) }} วัน</p>
           </div>
         </div>
       </section>
@@ -99,7 +99,7 @@
               <tr v-for="req in paginatedTeacherRequests" :key="req.id" class="hover:bg-slate-50/50 transition-colors">
                 <td class="py-4 px-6 font-semibold text-slate-900">{{ req.leaveTypeName }}</td>
                 <td class="py-4 px-6 text-slate-500">{{ req.dateString }}</td>
-                <td class="py-4 px-6 font-semibold">{{ req.totalDays }} วัน</td>
+                <td class="py-4 px-6 font-semibold">{{ formatDay(req.totalDays) }} วัน</td>
                 <td class="py-4 px-6">
                   <span class="px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1" :class="getStatusClass(req.status)">
                     <span class="w-1.5 h-1.5 rounded-full" :class="getStatusDotClass(req.status)"></span>
@@ -256,8 +256,20 @@ const profileInitials = computed(() => {
 
 const greetingName = computed(() => currentUser.value?.firstname?.trim() || 'คุณครู')
 
-const totalUsedRequests = computed(() => leavePolicies.value.reduce((sum, p) => sum + p.usedRequests, 0))
-const totalRemainingRequests = computed(() => leavePolicies.value.reduce((sum, p) => sum + (p.maxRequests - p.usedRequests), 0))
+const normalizeDayNumber = (value: number, digits = 2) => {
+  const num = Number(value || 0)
+  const factor = 10 ** digits
+  return Math.round((num + Number.EPSILON) * factor) / factor
+}
+
+const formatDay = (value: number) => {
+  const normalized = normalizeDayNumber(value)
+  if (Number.isInteger(normalized)) return String(normalized)
+  return String(normalized)
+}
+
+const totalUsedRequests = computed(() => normalizeDayNumber(leavePolicies.value.reduce((sum, p) => sum + p.usedRequests, 0)))
+const totalRemainingRequests = computed(() => normalizeDayNumber(leavePolicies.value.reduce((sum, p) => sum + (p.maxRequests - p.usedRequests), 0)))
 const totalPages = computed(() => Math.max(1, Math.ceil(teacherRequests.value.length / pageSize)))
 const paginatedTeacherRequests = computed(() => {
   const start = (currentPage.value - 1) * pageSize

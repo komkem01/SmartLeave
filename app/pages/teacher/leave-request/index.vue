@@ -415,23 +415,9 @@ const getTodayLocalDate = () => {
   return `${yyyy}-${mm}-${dd}`
 }
 
-const getCurrentTime = () => {
-  const now = new Date()
-  const hh = String(now.getHours()).padStart(2, '0')
-  const mm = String(now.getMinutes()).padStart(2, '0')
-  return `${hh}:${mm}`
-}
-
-const getOneHourLaterTime = () => {
-  const later = new Date(Date.now() + 60 * 60 * 1000)
-  const hh = String(later.getHours()).padStart(2, '0')
-  const mm = String(later.getMinutes()).padStart(2, '0')
-  return `${hh}:${mm}`
-}
-
 const defaultLeaveDate = getTodayLocalDate()
-const defaultStartTime = getCurrentTime()
-const defaultEndTime = getOneHourLaterTime()
+const defaultStartTime = '08:00'
+const defaultEndTime = '16:00'
 
 const form = ref({
   type: '',

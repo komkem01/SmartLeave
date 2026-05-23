@@ -748,9 +748,14 @@ const openRejectConfirm = () => {
 }
 
 const closeConfirmModal = () => {
+  const actionType = confirmActionType.value
   openConfirm.value = false
   confirmActionType.value = null
   confirmReq.value = null
+
+  if (actionType === 'reject') {
+    closeRejectModal()
+  }
 }
 
 const updateLeaveStatus = async (id: string, status: LeaveStatus, rejectReason?: string) => {
