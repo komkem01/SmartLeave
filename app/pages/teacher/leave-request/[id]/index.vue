@@ -433,34 +433,78 @@ interface LeaveRequestView {
   attachmentUrl?: string;
 }
 
+interface PdfStats {
+  taken?: number;
+  this_time?: number;
+  total?: number;
+}
+
+interface LeaveRequestPdfApi {
+  type: "vacation" | "sick" | "personal" | "maternity";
+  written_at?: string;
+  date?: string;
+  to?: string;
+  name?: string;
+  position?: string;
+  department?: string;
+  accumulated_days?: number;
+  start_date?: string;
+  end_date?: string;
+  total_days?: number;
+  reason?: string;
+  last_leave_type?: string;
+  last_leave_start_date?: string;
+  last_leave_end_date?: string;
+  last_leave_total_days?: number;
+  contact_address?: string;
+  email?: string;
+  phone?: string;
+  substitute_name?: string;
+  stats?: {
+    vacation?: PdfStats;
+    sick?: PdfStats;
+    personal?: PdfStats;
+    maternity?: PdfStats;
+  };
+}
+
+interface LeavePreviewData {
+  type: "vacation" | "sick" | "personal" | "maternity";
+  writtenAt?: string;
+  date?: string;
+  to?: string;
+  name?: string;
+  position?: string;
+  department?: string;
+  accumulatedDays?: number;
+  startDate?: string;
+  endDate?: string;
+  totalDays?: number;
+  reason?: string;
+  lastLeaveType?: string;
+  lastLeaveStartDate?: string;
+  lastLeaveEndDate?: string;
+  lastLeaveTotalDays?: number;
+  contactAddress?: string;
+  email?: string;
+  phone?: string;
+  substituteName?: string;
+  stats?: {
+    vacation?: { taken?: number; thisTime?: number; total?: number };
+    sick?: { taken?: number; thisTime?: number; total?: number };
+    personal?: { taken?: number; thisTime?: number; total?: number };
+    maternity?: { taken?: number; thisTime?: number; total?: number };
+  };
+}
+
 const isLoading = ref(false);
 const docZoom = ref(1);
 const docRotation = ref(0);
 const leaveRequest = ref<LeaveRequestView | null>(null);
+const previewPdfData = ref<LeavePreviewData | null>(null);
 
 const computedPreviewData = computed(() => {
-  if (!leaveRequest.value) return {};
-  const lr = leaveRequest.value;
-  return {
-    type: lr.type,
-    writtenAt: 'โรงเรียนสะอาดประชาสรรพ์',
-    date: lr.startDate,
-    to: 'ผู้อำนวยการโรงเรียนสะอาดประชาสรรพ์',
-    name: `${lr.prefix}${lr.firstName} ${lr.lastName}`,
-    position: lr.position,
-    department: lr.department,
-    startDate: lr.startDate,
-    endDate: lr.endDate,
-    totalDays: lr.totalDays,
-    reason: lr.reason,
-    contactAddress: `${lr.location} โทร ${lr.email}`,
-    stats: {
-      sick: { taken: 0, thisTime: lr.type === 'sick' ? lr.totalDays : 0, total: lr.type === 'sick' ? lr.totalDays : 0 },
-      personal: { taken: 0, thisTime: lr.type === 'personal' ? lr.totalDays : 0, total: lr.type === 'personal' ? lr.totalDays : 0 },
-      maternity: { taken: 0, thisTime: lr.type === 'maternity' ? lr.totalDays : 0, total: lr.type === 'maternity' ? lr.totalDays : 0 },
-      vacation: { taken: 0, thisTime: lr.type === 'vacation' ? lr.totalDays : 0, total: lr.type === 'vacation' ? lr.totalDays : 0 }
-    }
-  };
+  return previewPdfData.value || {};
 });
 
 const profileFullName = computed(() => {
@@ -586,6 +630,15 @@ const printFormPdf = () => {
 };
 
 const downloadDoc = async () => {
+  if (!leaveRequest.value || leaveRequest.value.status !== "approved") {
+    addToast(
+      "warning",
+      "ยังดาวน์โหลดไม่ได้",
+      "ดาวน์โหลดเอกสารได้เมื่อสถานะอนุมัติแล้วเท่านั้น",
+    );
+    return;
+  }
+
   addToast(
     "info",
     "เริ่มดาวน์โหลดไฟล์",
@@ -630,21 +683,70 @@ const loadDetail = async () => {
     const id = String(route.params.id || "");
     if (!id) {
       leaveRequest.value = null;
+      previewPdfData.value = null;
       return;
     }
 
-    const [meRes, leaveRes] = await Promise.all([
+    const [meRes, leaveRes, pdfRes] = await Promise.all([
       $fetch<any>(`${BASE}/member/me`, { headers }),
       $fetch<any>(`${BASE}/leave-request/${id}`, { headers }),
+      $fetch<any>(`${BASE}/leave-request/${id}/pdf-data`, { headers }),
     ]);
 
     const me = (meRes?.data ?? null) as ApiCurrentUser | null;
     const lr = (leaveRes?.data ?? null) as ApiLeaveRequest | null;
+    const pdf = (pdfRes?.data ?? null) as LeaveRequestPdfApi | null;
 
-    if (!me || !lr) {
+    if (!me || !lr || !pdf) {
       leaveRequest.value = null;
+      previewPdfData.value = null;
       return;
     }
+
+    previewPdfData.value = {
+      type: pdf.type,
+      writtenAt: pdf.written_at,
+      date: pdf.date,
+      to: pdf.to,
+      name: pdf.name,
+      position: pdf.position,
+      department: pdf.department,
+      accumulatedDays: pdf.accumulated_days,
+      startDate: pdf.start_date,
+      endDate: pdf.end_date,
+      totalDays: pdf.total_days,
+      reason: pdf.reason,
+      lastLeaveType: pdf.last_leave_type,
+      lastLeaveStartDate: pdf.last_leave_start_date,
+      lastLeaveEndDate: pdf.last_leave_end_date,
+      lastLeaveTotalDays: pdf.last_leave_total_days,
+      contactAddress: pdf.contact_address,
+      email: pdf.email,
+      phone: pdf.phone,
+      substituteName: pdf.substitute_name,
+      stats: {
+        vacation: {
+          taken: pdf.stats?.vacation?.taken,
+          thisTime: pdf.stats?.vacation?.this_time,
+          total: pdf.stats?.vacation?.total,
+        },
+        sick: {
+          taken: pdf.stats?.sick?.taken,
+          thisTime: pdf.stats?.sick?.this_time,
+          total: pdf.stats?.sick?.total,
+        },
+        personal: {
+          taken: pdf.stats?.personal?.taken,
+          thisTime: pdf.stats?.personal?.this_time,
+          total: pdf.stats?.personal?.total,
+        },
+        maternity: {
+          taken: pdf.stats?.maternity?.taken,
+          thisTime: pdf.stats?.maternity?.this_time,
+          total: pdf.stats?.maternity?.total,
+        },
+      },
+    };
 
     if (lr.member_id !== me.id) {
       addToast(
@@ -724,6 +826,7 @@ const loadDetail = async () => {
     };
   } catch {
     leaveRequest.value = null;
+    previewPdfData.value = null;
     addToast(
       "error",
       "โหลดข้อมูลไม่สำเร็จ",

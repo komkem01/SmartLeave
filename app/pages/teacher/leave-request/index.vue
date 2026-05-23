@@ -59,12 +59,29 @@
               <p class="text-2xs text-slate-500">อีเมล</p>
               <p class="text-sm font-semibold text-slate-800">{{ profile.email }}</p>
             </div>
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 sm:col-span-2">
+              <p class="text-2xs text-slate-500">เบอร์โทรศัพท์</p>
+              <p class="text-sm font-semibold text-slate-800">{{ profile.phone }}</p>
+            </div>
           </div>
         </section>
 
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <section>
-            <h2 class="text-sm font-bold text-slate-900 mb-3">2) ประเภทการลา</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-3">2) เขียนที่</h2>
+            <div class="max-w-xxl">
+              <input
+                v-model="form.writtenAt"
+                type="text"
+                required
+                placeholder="เช่น โรงเรียนสะอาดประชาสรรพ์"
+                class="block w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </section>
+
+          <section>
+            <h2 class="text-sm font-bold text-slate-900 mb-3">3) ประเภทการลา</h2>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
               <div class="lg:col-span-2">
                 <AppDropdown
@@ -92,7 +109,7 @@
           </section>
 
           <section>
-            <h2 class="text-sm font-bold text-slate-900 mb-3">3) วันที่ลา</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-3">4) วันที่ลา</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="relative">
                 <label class="block text-xs text-slate-700 mb-1">วันที่เริ่มลา</label>
@@ -143,7 +160,7 @@
           </section>
 
           <section>
-            <h2 class="text-sm font-bold text-slate-900 mb-3">4) สถานที่</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-3">5) สถานที่</h2>
             <div class="space-y-3">
               <div class="max-w-xxl">
                 <input
@@ -195,7 +212,7 @@
           </section>
 
           <section>
-            <h2 class="text-sm font-bold text-slate-900 mb-3">5) เหตุผล</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-3">6) เหตุผล</h2>
             <textarea
               v-model="form.reason"
               required
@@ -206,7 +223,7 @@
           </section>
 
           <section>
-            <h2 class="text-sm font-bold text-slate-900 mb-3">6) เอกสาร/ไฟล์แนบ (ไม่บังคับ)</h2>
+            <h2 class="text-sm font-bold text-slate-900 mb-3">7) เอกสาร/ไฟล์แนบ (ไม่บังคับ)</h2>
             <div
               class="flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-2xl hover:border-blue-400 transition-colors duration-200 cursor-pointer"
               :class="{ 'border-rose-300 bg-rose-50/20': errors.attachment }"
@@ -315,6 +332,7 @@ interface ApiCurrentUser {
   role?: string
   department?: string
   email?: string
+  phone?: string
 }
 
 interface ApiLeaveType {
@@ -344,7 +362,8 @@ const profile = ref({
   fullName: '-',
   position: 'ครู',
   department: '-',
-  email: '-'
+  email: '-',
+  phone: '-'
 })
 
 const profileInitials = computed(() => {
@@ -370,6 +389,7 @@ const getTodayLocalDate = () => {
 const defaultLeaveDate = getTodayLocalDate()
 const form = ref({
   type: '',
+  writtenAt: '',
   startDate: defaultLeaveDate,
   endDate: defaultLeaveDate,
   location: '',
@@ -636,6 +656,11 @@ const handleSubmit = async () => {
     return
   }
 
+  if (!form.value.writtenAt.trim()) {
+    addToast('warning', 'ข้อมูลไม่ครบ', 'กรุณาระบุเขียนที่')
+    return
+  }
+
   if (!form.value.startDate || !form.value.endDate) {
     addToast('warning', 'ข้อมูลไม่ครบ', 'กรุณาเลือกวันที่เริ่มลาและวันที่สิ้นสุดลา')
     return
@@ -676,6 +701,8 @@ const handleSubmit = async () => {
       body: {
         member_id: memberID,
         leave_type_id: form.value.type,
+        written_at: form.value.writtenAt,
+        contact_address: form.value.location,
         start_date: form.value.startDate,
         end_date: form.value.endDate,
         total_days: totalDays,
@@ -724,6 +751,7 @@ const fetchPageData = async () => {
       position: me.role === 'director' ? 'ผู้อำนวยการ' : 'ครู',
       department: me.department || '-',
       email: me.email || '-',
+      phone: me.phone || '-',
     }
 
     const [leaveTypeRes, provinceRes, leaveReqRes] = await Promise.all([

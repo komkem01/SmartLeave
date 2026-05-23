@@ -87,11 +87,10 @@
                 />
               </div>
 
-              <!-- อีเมล -->
               <div>
                 <label for="regEmail" class="block text-xs font-semibold text-slate-700">อีเมล <span class="text-rose-500">*</span></label>
                 <input id="regEmail" v-model="regForm.email" type="text" inputmode="email" required placeholder="user@example.com"
-                  class="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  class="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   :class="{ 'border-rose-400': errors.email }"
                   @input="validateEmail" />
                 <p v-if="errors.email" class="mt-1 text-xs text-rose-500 font-medium">{{ errors.email }}</p>
@@ -155,6 +154,12 @@
                   placeholder="ระบุตำบลเพื่อค้นหารหัสอัตโนมัติ"
                   class="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-500 cursor-not-allowed"
                 />
+              </div>
+
+              <div>
+                <label for="regPhone" class="block text-xs font-semibold text-slate-700">เบอร์โทรศัพท์ <span class="text-rose-500">*</span></label>
+                <input id="regPhone" v-model="regForm.phone" type="text" inputmode="tel" required placeholder="08xxxxxxxx"
+                  class="mt-1 block w-full min-w-0 rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
               </div>
             </div>
 
@@ -251,6 +256,7 @@ const regForm = ref({
   department:    '',
   role:          'teacher',
   email:         '',
+  phone:         '',
   password:      '',
   confirmPassword: '',
   provinceId:    '',
@@ -389,7 +395,7 @@ const handleRegister = async () => {
   }
 
   const f = regForm.value
-  if (!f.genderId || !f.prefixId || !f.department || !f.provinceId || !f.districtId || !f.subDistrictId || !f.zipcodeId) {
+  if (!f.genderId || !f.prefixId || !f.department || !f.phone || !f.provinceId || !f.districtId || !f.subDistrictId || !f.zipcodeId) {
     addToast('error', 'ข้อมูลไม่ครบ', 'กรุณาเลือกเพศ คำนำหน้า กลุ่มสาระการเรียนรู้ และที่อยู่ให้ครบถ้วน')
     return
   }
@@ -402,6 +408,7 @@ const handleRegister = async () => {
         gender_id:       f.genderId,
         prefix_id:       f.prefixId,
         email:           f.email,
+        phone:           f.phone,
         password:        f.password,
         firstname:       f.firstName,
         lastname:        f.lastName,

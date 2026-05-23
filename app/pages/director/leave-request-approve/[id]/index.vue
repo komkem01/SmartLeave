@@ -630,6 +630,11 @@ const rotateDoc = () => {
 }
 
 const downloadDoc = async () => {
+  if (!leaveRequest.value || leaveRequest.value.status !== 'approved') {
+    addToast('warning', 'ยังดาวน์โหลดไม่ได้', 'ดาวน์โหลดเอกสารได้เมื่อสถานะอนุมัติแล้วเท่านั้น')
+    return
+  }
+
   addToast('info', 'เริ่มดาวน์โหลดไฟล์', `กำลังสร้างไฟล์ PDF กรุณารอสักครู่...`)
   if (import.meta.client) {
     const html2pdf = (await import('html2pdf.js')).default;
