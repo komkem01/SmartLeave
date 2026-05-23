@@ -235,6 +235,7 @@ const subDistricts = ref<Item[]>([])
 const zipcodes  = ref<Item[]>([])
 const roleOptions: Item[] = [
   { id: 'teacher', name: 'ครู' },
+  // { id: 'director', name: 'ผู้อำนวยการ' },
 ]
 const departmentOptions: Item[] = [
   { id: 'ภาษาไทย', name: 'ภาษาไทย' },
