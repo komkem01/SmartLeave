@@ -156,204 +156,26 @@
               <button
                 type="button"
                 @click="downloadDoc"
-                class="inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                :disabled="leaveRequest?.status !== 'approved'"
+                class="inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-bold text-white transition-colors"
+                :class="leaveRequest?.status === 'approved' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-400 cursor-not-allowed'"
               >
-                ดาวน์โหลดไฟล์ PDF (A4)
+                {{ leaveRequest?.status === 'approved' ? 'ดาวน์โหลดไฟล์ PDF (A4)' : 'ดาวน์โหลดได้เมื่ออนุมัติแล้ว' }}
               </button>
             </div>
 
             <div
-              class="bg-slate-800 rounded-xl p-4 sm:p-6 min-h-[520px] flex items-center justify-center overflow-auto"
+              class="bg-slate-800 rounded-xl p-4 sm:p-6 min-h-[520px] flex items-center justify-center overflow-auto no-print"
             >
               <div
-                class="bg-white rounded-lg shadow-2xl p-8 text-slate-800 transition-all duration-200"
+                class="transition-all duration-200"
                 :style="{
-                  transform: `scale(${docZoom}) rotate(${docRotation}deg)`,
-                  width: '420px',
-                  minHeight: '594px',
+                  transform: `scale(${docZoom * 0.7}) rotate(${docRotation}deg)`,
+                  transformOrigin: 'center center'
                 }"
               >
-                <div class="text-[10px] leading-relaxed space-y-2">
-                  <div class="text-center font-bold">แบบฟอร์มการขอลางาน</div>
-
-                  <div class="text-right pt-1">
-                    <div>เขียนที่ โรงเรียนสะอาดประชาสรรพ์</div>
-                    <div>วันที่ {{ leaveRequest.startDate }}</div>
-                  </div>
-
-                  <div class="pt-1">
-                    <span class="mr-2">เรื่อง</span>
-                    <span class="mr-2">ขอลา</span>
-                    <span class="mr-2"
-                      >{{ leaveRequest.type === "sick" ? "●" : "○" }} ป่วย</span
-                    >
-                    <span class="mr-2"
-                      >{{
-                        leaveRequest.type === "personal" ? "●" : "○"
-                      }}
-                      กิจส่วนตัว</span
-                    >
-                    <span
-                      >{{ leaveRequest.type === "vacation" ? "●" : "○" }} อื่นๆ
-                      (ระบุ) {{ leaveRequest.leaveTypeName }}</span
-                    >
-                  </div>
-
-                  <div>เรียน ผู้อำนวยการโรงเรียนสะอาดประชาสรรพ์</div>
-
-                  <div>
-                    ข้าพเจ้า {{ leaveRequest.prefix
-                    }}{{ leaveRequest.firstName }}
-                    {{ leaveRequest.lastName }} ตำแหน่ง
-                    {{ leaveRequest.position }}
-                  </div>
-                  <div>
-                    สังกัดกลุ่มสาระการเรียนรู้ {{ leaveRequest.department }}
-                  </div>
-
-                  <div>
-                    ขอลา {{ leaveRequest.type === "sick" ? "●" : "○" }} ป่วย
-                    {{
-                      leaveRequest.type === "personal" ? "●" : "○"
-                    }}
-                    กิจส่วนตัว
-                    {{ leaveRequest.type === "vacation" ? "●" : "○" }} อื่นๆ
-                    เนื่องจาก {{ leaveRequest.reason }}
-                  </div>
-
-                  <div>
-                    ตั้งแต่วันที่ {{ leaveRequest.startDate }} ถึงวันที่
-                    {{ leaveRequest.endDate }} มีกำหนด
-                    {{ leaveRequest.totalDays }} วัน
-                  </div>
-
-                  <div>
-                    ในระหว่างลาสามารถติดต่อข้าพเจ้าได้ที่
-                    {{ leaveRequest.location }} โทร {{ leaveRequest.email }}
-                  </div>
-
-                  <div class="pt-4 grid grid-cols-2 gap-6">
-                    <div>
-                      <div class="font-semibold mb-1">
-                        สถิติการลาในปีงบประมาณนี้
-                      </div>
-                      <table
-                        class="w-full border border-slate-700 border-collapse text-center"
-                      >
-                        <thead>
-                          <tr>
-                            <th
-                              class="border border-slate-700 px-1 py-1 font-normal"
-                            >
-                              ประเภทลา
-                            </th>
-                            <th
-                              class="border border-slate-700 px-1 py-1 font-normal"
-                            >
-                              ลามาแล้ว
-                            </th>
-                            <th
-                              class="border border-slate-700 px-1 py-1 font-normal"
-                            >
-                              ลาครั้งนี้
-                            </th>
-                            <th
-                              class="border border-slate-700 px-1 py-1 font-normal"
-                            >
-                              รวมเป็น
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td class="border border-slate-700 px-1 py-1">
-                              ป่วย
-                            </td>
-                            <td class="border border-slate-700 px-1 py-1"></td>
-                            <td class="border border-slate-700 px-1 py-1">
-                              {{
-                                leaveRequest.type === "sick"
-                                  ? leaveRequest.totalDays
-                                  : ""
-                              }}
-                            </td>
-                            <td class="border border-slate-700 px-1 py-1"></td>
-                          </tr>
-                          <tr>
-                            <td class="border border-slate-700 px-1 py-1">
-                              กิจส่วนตัว
-                            </td>
-                            <td class="border border-slate-700 px-1 py-1"></td>
-                            <td class="border border-slate-700 px-1 py-1">
-                              {{
-                                leaveRequest.type === "personal"
-                                  ? leaveRequest.totalDays
-                                  : ""
-                              }}
-                            </td>
-                            <td class="border border-slate-700 px-1 py-1"></td>
-                          </tr>
-                          <tr>
-                            <td class="border border-slate-700 px-1 py-1">
-                              คลอดบุตร
-                            </td>
-                            <td class="border border-slate-700 px-1 py-1"></td>
-                            <td class="border border-slate-700 px-1 py-1"></td>
-                            <td class="border border-slate-700 px-1 py-1"></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div class="space-y-3">
-                      <div class="text-center">
-                        <div>ขอแสดงความนับถือ</div>
-                        <div class="mt-7">
-                          (ลงชื่อ)........................................................
-                        </div>
-                        <div>
-                          ( {{ leaveRequest.prefix
-                          }}{{ leaveRequest.firstName }}
-                          {{ leaveRequest.lastName }} )
-                        </div>
-                      </div>
-
-                      <div>
-                        <div>
-                          เห็นสมควร
-                          {{
-                            leaveRequest.status === "approved" ? "●" : "○"
-                          }}
-                          อนุญาต
-                          {{
-                            leaveRequest.status === "rejected" ? "●" : "○"
-                          }}
-                          ไม่อนุญาต
-                        </div>
-                        <div class="mt-2">
-                          (ลงชื่อ)........................................................
-                        </div>
-                        <div>รองผู้อำนวยการกลุ่มบริหารงานบุคคล</div>
-                        <div>
-                          วันที่ ........... / ........... / ...........
-                        </div>
-                      </div>
-
-                      <div>
-                        <div class="font-semibold text-center">คำสั่ง</div>
-                        <div class="mt-1 text-center">
-                          ○ อนุญาต &nbsp;&nbsp;&nbsp; ○ ไม่อนุญาต
-                        </div>
-                        <div class="mt-2">
-                          (ลงชื่อ)........................................................
-                        </div>
-                        <div>ผู้อำนวยการโรงเรียนสะอาดประชาสรรพ์</div>
-                        <div>
-                          วันที่ ........... / ........... / ...........
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div id="pdf-content">
+                  <LeaveDocumentPreview v-if="leaveRequest" :data="computedPreviewData" />
                 </div>
               </div>
             </div>
@@ -523,11 +345,15 @@
         </div>
       </div>
     </main>
+    <div class="print-only">
+      <LeaveDocumentPreview v-if="leaveRequest" :data="computedPreviewData" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import LeaveDocumentPreview from '~/components/leave/LeaveDocumentPreview.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -611,6 +437,31 @@ const isLoading = ref(false);
 const docZoom = ref(1);
 const docRotation = ref(0);
 const leaveRequest = ref<LeaveRequestView | null>(null);
+
+const computedPreviewData = computed(() => {
+  if (!leaveRequest.value) return {};
+  const lr = leaveRequest.value;
+  return {
+    type: lr.type,
+    writtenAt: 'โรงเรียนสะอาดประชาสรรพ์',
+    date: lr.startDate,
+    to: 'ผู้อำนวยการโรงเรียนสะอาดประชาสรรพ์',
+    name: `${lr.prefix}${lr.firstName} ${lr.lastName}`,
+    position: lr.position,
+    department: lr.department,
+    startDate: lr.startDate,
+    endDate: lr.endDate,
+    totalDays: lr.totalDays,
+    reason: lr.reason,
+    contactAddress: `${lr.location} โทร ${lr.email}`,
+    stats: {
+      sick: { taken: 0, thisTime: lr.type === 'sick' ? lr.totalDays : 0, total: lr.type === 'sick' ? lr.totalDays : 0 },
+      personal: { taken: 0, thisTime: lr.type === 'personal' ? lr.totalDays : 0, total: lr.type === 'personal' ? lr.totalDays : 0 },
+      maternity: { taken: 0, thisTime: lr.type === 'maternity' ? lr.totalDays : 0, total: lr.type === 'maternity' ? lr.totalDays : 0 },
+      vacation: { taken: 0, thisTime: lr.type === 'vacation' ? lr.totalDays : 0, total: lr.type === 'vacation' ? lr.totalDays : 0 }
+    }
+  };
+});
 
 const profileFullName = computed(() => {
   if (!leaveRequest.value) return "ครูผู้สอน";
@@ -734,12 +585,24 @@ const printFormPdf = () => {
   window.print();
 };
 
-const downloadDoc = () => {
+const downloadDoc = async () => {
   addToast(
     "info",
     "เริ่มดาวน์โหลดไฟล์",
-    "เริ่มดาวน์โหลดไฟล์ PDF ขนาด A4 ที่กรอกข้อมูลจากระบบแล้ว",
+    "กำลังสร้างไฟล์ PDF กรุณารอสักครู่...",
   );
+  if (import.meta.client) {
+    const html2pdf = (await import('html2pdf.js')).default;
+    const element = document.getElementById('pdf-content');
+    const opt = {
+      margin:       0,
+      filename:     `ใบลา_${leaveRequest.value?.firstName}_${leaveRequest.value?.startDate}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  }
 };
 
 const resolveNameById = async (
