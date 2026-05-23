@@ -52,6 +52,14 @@
             </svg>
             กลับหน้ารายการใบลา
           </NuxtLink>
+          <button
+            type="button"
+            @click="downloadDoc"
+            :disabled="leaveRequest?.status !== 'approved'"
+            class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:hover:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+          >
+            ดาวน์โหลด PDF
+          </button>
         </div>
       </div>
 
@@ -65,49 +73,7 @@
       </div>
 
       <div v-else class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="grid grid-cols-1 lg:grid-cols-2 min-h-[620px]">
-          <section class="bg-slate-900 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-slate-700">
-            <div class="bg-slate-950 rounded-xl px-4 py-2 flex items-center justify-between text-white mb-4">
-              <div class="text-xs text-slate-300 truncate pr-2">
-                ฟอร์มใบลาราชการ (PDF): แบบใบลาของข้าราชการ.pdf
-              </div>
-              <div class="flex items-center gap-2">
-                <button @click="zoomOut" class="text-slate-300 hover:text-white" title="ซูมออก">-</button>
-                <span class="text-xs text-slate-300 min-w-[38px] text-center">{{ Math.round(docZoom * 100) }}%</span>
-                <button @click="zoomIn" class="text-slate-300 hover:text-white" title="ซูมเข้า">+</button>
-                <button @click="rotateDoc" class="text-slate-300 hover:text-white" title="หมุน">⟳</button>
-                <button @click="printFormPdf" class="text-slate-300 hover:text-white" title="พิมพ์ฟอร์ม">🖨</button>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <button
-                type="button"
-                @click="downloadDoc"
-                :disabled="leaveRequest?.status !== 'approved'"
-                class="inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-bold text-white transition-colors"
-                :class="leaveRequest?.status === 'approved' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-400 cursor-not-allowed'"
-              >
-                {{ leaveRequest?.status === 'approved' ? 'ดาวน์โหลดไฟล์ PDF (A4)' : 'ดาวน์โหลดได้เมื่ออนุมัติแล้ว' }}
-              </button>
-            </div>
-
-            <div class="bg-slate-800 rounded-xl p-4 sm:p-6 min-h-[520px] flex items-center justify-center overflow-auto no-print">
-              <div
-                class="transition-all duration-200"
-                :style="{
-                  transform: `scale(${docZoom * 0.7}) rotate(${docRotation}deg)`,
-                  transformOrigin: 'center center'
-                }"
-              >
-                <div id="pdf-content">
-                  <LeaveDocumentPreview v-if="leaveRequest" :data="computedPreviewData" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="p-6 space-y-4">
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p class="text-xs text-slate-500">เลขที่คำร้อง</p>
               <p class="text-base font-bold text-slate-900">{{ formattedRequestNumber }}</p>
@@ -145,7 +111,7 @@
               <p v-else class="text-xs text-slate-600">รายการนี้ดำเนินการแล้ว ไม่สามารถเปลี่ยนสถานะซ้ำได้</p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm lg:col-span-2">
               <div class="rounded-xl border border-slate-200 p-4">
                 <p class="text-xs text-slate-500">ชื่อผู้ยื่น</p>
                 <p class="font-bold text-slate-900">{{ leaveRequest.prefix }}{{ leaveRequest.firstName }} {{ leaveRequest.lastName }}</p>
@@ -217,7 +183,17 @@
                 <p v-else class="mt-2 text-xs text-slate-500">ไม่มีไฟล์แนบเพิ่มเติม</p>
               </div>
             </div>
-          </section>
+        </div>
+      </div>
+
+      <div
+        v-if="leaveRequest"
+        class="pointer-events-none"
+        aria-hidden="true"
+        style="position: fixed; left: -100000px; top: 0; z-index: -1;"
+      >
+        <div id="pdf-content" ref="pdfContentRef">
+          <LeaveDocumentPreview :data="computedPreviewData" />
         </div>
       </div>
     </main>
@@ -230,7 +206,7 @@
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="openApproveConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div v-if="openApproveConfirm" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeApproveConfirmModal">
         <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" @click="closeApproveConfirmModal"></div>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden relative z-10">
           <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -279,7 +255,7 @@
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="openReject" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div v-if="openReject" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="closeRejectModal">
         <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" @click="closeRejectModal"></div>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden relative z-10">
           <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -326,14 +302,11 @@
         </div>
       </div>
     </transition>
-    <div class="print-only">
-      <LeaveDocumentPreview v-if="leaveRequest" :data="computedPreviewData" />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import LeaveDocumentPreview from '~/components/leave/LeaveDocumentPreview.vue'
 
 const route = useRoute()
@@ -478,8 +451,6 @@ definePageMeta({
   middleware: ['require-auth'],
 })
 
-const docZoom = ref(1)
-const docRotation = ref(0)
 const openApproveConfirm = ref(false)
 const openReject = ref(false)
 const rejectReason = ref('')
@@ -488,7 +459,7 @@ const isActionLoading = ref(false)
 const currentUser = ref<ApiCurrentUser | null>(null)
 const leaveRequest = ref<LeaveRequest | null>(null)
 const previewPdfData = ref<LeavePreviewData | null>(null)
-const formPdfFileName = 'แบบใบลาของข้าราชการ.pdf'
+const pdfContentRef = ref<HTMLElement | null>(null)
 
 const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const monthLongTH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
@@ -723,6 +694,46 @@ const getLeaveTypeClass = (type: string) => {
   return 'text-slate-700 bg-slate-100'
 }
 
+const normalizeUnsupportedPdfColors = (root: HTMLElement) => {
+  const allElements = [root, ...Array.from(root.querySelectorAll<HTMLElement>('*'))]
+
+  const hasUnsupportedColor = (value: string) => value.includes('oklch(')
+
+  for (const el of allElements) {
+    const computedStyle = getComputedStyle(el)
+    const isRoot = el === root
+
+    if (hasUnsupportedColor(computedStyle.color)) {
+      el.style.color = '#000000'
+    }
+
+    if (hasUnsupportedColor(computedStyle.backgroundColor)) {
+      el.style.backgroundColor = isRoot ? '#ffffff' : 'transparent'
+    }
+
+    if (
+      hasUnsupportedColor(computedStyle.borderTopColor) ||
+      hasUnsupportedColor(computedStyle.borderRightColor) ||
+      hasUnsupportedColor(computedStyle.borderBottomColor) ||
+      hasUnsupportedColor(computedStyle.borderLeftColor)
+    ) {
+      el.style.borderColor = '#000000'
+    }
+
+    if (hasUnsupportedColor(computedStyle.outlineColor)) {
+      el.style.outlineColor = '#000000'
+    }
+
+    if (hasUnsupportedColor(computedStyle.textDecorationColor)) {
+      el.style.textDecorationColor = '#000000'
+    }
+
+    if (hasUnsupportedColor(computedStyle.boxShadow)) {
+      el.style.boxShadow = 'none'
+    }
+  }
+}
+
 const getStatusText = (status: string) => {
   if (status === 'approved') return 'อนุมัติเรียบร้อย'
   if (status === 'rejected') return 'ปฏิเสธใบคำร้อง'
@@ -735,18 +746,6 @@ const getStatusClass = (status: string) => {
   return 'bg-amber-50 text-amber-700'
 }
 
-const zoomIn = () => {
-  if (docZoom.value < 1.8) docZoom.value += 0.15
-}
-
-const zoomOut = () => {
-  if (docZoom.value > 0.6) docZoom.value -= 0.15
-}
-
-const rotateDoc = () => {
-  docRotation.value = (docRotation.value + 90) % 360
-}
-
 const downloadDoc = async () => {
   if (!leaveRequest.value || leaveRequest.value.status !== 'approved') {
     addToast('warning', 'ยังดาวน์โหลดไม่ได้', 'ดาวน์โหลดเอกสารได้เมื่อสถานะอนุมัติแล้วเท่านั้น')
@@ -755,21 +754,46 @@ const downloadDoc = async () => {
 
   addToast('info', 'เริ่มดาวน์โหลดไฟล์', `กำลังสร้างไฟล์ PDF กรุณารอสักครู่...`)
   if (import.meta.client) {
-    const html2pdf = (await import('html2pdf.js')).default;
-    const element = document.getElementById('pdf-content');
-    const opt = {
-      margin:       0,
-      filename:     `ใบลา_${leaveRequest.value?.firstName}_${leaveRequest.value?.startDate}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
-  }
-}
+    let sandbox: HTMLDivElement | null = null
+    try {
+      await nextTick()
+      const html2pdfModule = await import('html2pdf.js')
+      const html2pdf = (html2pdfModule.default ?? html2pdfModule) as any
+      const source = pdfContentRef.value
+      if (!source) {
+        addToast('error', 'ไม่พบเอกสารสำหรับดาวน์โหลด', 'กรุณาลองใหม่อีกครั้ง')
+        return
+      }
 
-const printFormPdf = () => {
-  window.print()
+      sandbox = document.createElement('div')
+      sandbox.style.position = 'fixed'
+      sandbox.style.left = '0'
+      sandbox.style.top = '0'
+      sandbox.style.zIndex = '-1'
+      sandbox.style.pointerEvents = 'none'
+      sandbox.style.background = 'white'
+
+      const cloned = source.cloneNode(true) as HTMLElement
+      sandbox.appendChild(cloned)
+      document.body.appendChild(sandbox)
+      normalizeUnsupportedPdfColors(cloned)
+
+      const opt = {
+        margin: 0,
+        filename: `ใบลา_${leaveRequest.value?.firstName}_${leaveRequest.value?.startDate}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      }
+
+      await html2pdf().set(opt).from(cloned).save()
+    } catch (error) {
+      console.error('PDF download failed (director):', error)
+      addToast('error', 'ดาวน์โหลดไม่สำเร็จ', 'ระบบไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง')
+    } finally {
+      sandbox?.remove()
+    }
+  }
 }
 
 const approveRequest = async () => {
@@ -797,7 +821,6 @@ const openApproveConfirmModal = () => {
 }
 
 const closeApproveConfirmModal = () => {
-  if (isActionLoading.value) return
   openApproveConfirm.value = false
 }
 
@@ -813,7 +836,6 @@ const openRejectModal = () => {
 }
 
 const closeRejectModal = () => {
-  if (isActionLoading.value) return
   openReject.value = false
   rejectReason.value = ''
 }

@@ -65,25 +65,35 @@
             หน้านี้ต้องแสดงข้อมูลจากฟอร์มกรอกใบลาครบทุกช่อง
           </p>
         </div>
-        <NuxtLink
-          to="/teacher/dashboard"
-          class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
-        >
-          <svg
-            class="w-3.5 h-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <div class="flex flex-wrap items-center gap-2">
+          <NuxtLink
+            to="/teacher/dashboard"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          กลับหน้ารายการใบลา
-        </NuxtLink>
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            กลับหน้ารายการใบลา
+          </NuxtLink>
+          <button
+            type="button"
+            @click="downloadDoc"
+            :disabled="leaveRequest?.status !== 'approved'"
+            class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:hover:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+          >
+            ดาวน์โหลด PDF
+          </button>
+        </div>
       </div>
 
       <div
@@ -107,81 +117,7 @@
         v-else
         class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
       >
-        <div class="grid grid-cols-1 lg:grid-cols-2 min-h-[620px]">
-          <section
-            class="bg-slate-900 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-slate-700"
-          >
-            <div
-              class="bg-slate-950 rounded-xl px-4 py-2 flex items-center justify-between text-white mb-4"
-            >
-              <div class="text-xs text-slate-300 truncate pr-2">
-                ฟอร์มใบลาราชการ (PDF): แบบใบลาของข้าราชการ.pdf
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  @click="zoomOut"
-                  class="text-slate-300 hover:text-white"
-                  title="ซูมออก"
-                >
-                  -
-                </button>
-                <span class="text-xs text-slate-300 min-w-[38px] text-center"
-                  >{{ Math.round(docZoom * 100) }}%</span
-                >
-                <button
-                  @click="zoomIn"
-                  class="text-slate-300 hover:text-white"
-                  title="ซูมเข้า"
-                >
-                  +
-                </button>
-                <button
-                  @click="rotateDoc"
-                  class="text-slate-300 hover:text-white"
-                  title="หมุน"
-                >
-                  ⟳
-                </button>
-                <button
-                  @click="printFormPdf"
-                  class="text-slate-300 hover:text-white"
-                  title="พิมพ์ฟอร์ม"
-                >
-                  🖨
-                </button>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <button
-                type="button"
-                @click="downloadDoc"
-                :disabled="leaveRequest?.status !== 'approved'"
-                class="inline-flex w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-bold text-white transition-colors"
-                :class="leaveRequest?.status === 'approved' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-400 cursor-not-allowed'"
-              >
-                {{ leaveRequest?.status === 'approved' ? 'ดาวน์โหลดไฟล์ PDF (A4)' : 'ดาวน์โหลดได้เมื่ออนุมัติแล้ว' }}
-              </button>
-            </div>
-
-            <div
-              class="bg-slate-800 rounded-xl p-4 sm:p-6 min-h-[520px] flex items-center justify-center overflow-auto no-print"
-            >
-              <div
-                class="transition-all duration-200"
-                :style="{
-                  transform: `scale(${docZoom * 0.7}) rotate(${docRotation}deg)`,
-                  transformOrigin: 'center center'
-                }"
-              >
-                <div id="pdf-content">
-                  <LeaveDocumentPreview v-if="leaveRequest" :data="computedPreviewData" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section class="p-6 space-y-4">
+        <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <p class="text-xs text-slate-500">เลขที่คำร้อง</p>
               <p class="text-base font-bold text-slate-900">
@@ -227,7 +163,7 @@
               </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm lg:col-span-2">
               <div class="rounded-xl border border-slate-200 p-4">
                 <p class="text-xs text-slate-500">ชื่อผู้ยื่น</p>
                 <p class="font-bold text-slate-900">
@@ -341,18 +277,25 @@
                 <p v-else class="font-semibold text-slate-900">ไม่มีไฟล์แนบ</p>
               </div>
             </div>
-          </section>
+        </div>
+      </div>
+
+      <div
+        v-if="leaveRequest"
+        class="pointer-events-none"
+        aria-hidden="true"
+        style="position: fixed; left: -100000px; top: 0; z-index: -1;"
+      >
+        <div id="pdf-content" ref="pdfContentRef">
+          <LeaveDocumentPreview :data="computedPreviewData" />
         </div>
       </div>
     </main>
-    <div class="print-only">
-      <LeaveDocumentPreview v-if="leaveRequest" :data="computedPreviewData" />
-    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import LeaveDocumentPreview from '~/components/leave/LeaveDocumentPreview.vue';
 
 const route = useRoute();
@@ -508,10 +451,9 @@ interface LeavePreviewData {
 }
 
 const isLoading = ref(false);
-const docZoom = ref(1);
-const docRotation = ref(0);
 const leaveRequest = ref<LeaveRequestView | null>(null);
 const previewPdfData = ref<LeavePreviewData | null>(null);
+const pdfContentRef = ref<HTMLElement | null>(null);
 
 const computedPreviewData = computed(() => {
   return previewPdfData.value || {};
@@ -623,20 +565,44 @@ const getLeaveTypeClass = (type: LeaveRequestView["type"]) => {
   return "text-slate-700 bg-slate-100";
 };
 
-const zoomIn = () => {
-  if (docZoom.value < 1.8) docZoom.value += 0.15;
-};
+const normalizeUnsupportedPdfColors = (root: HTMLElement) => {
+  const allElements = [root, ...Array.from(root.querySelectorAll<HTMLElement>("*"))];
 
-const zoomOut = () => {
-  if (docZoom.value > 0.6) docZoom.value -= 0.15;
-};
+  const hasUnsupportedColor = (value: string) => value.includes("oklch(");
 
-const rotateDoc = () => {
-  docRotation.value = (docRotation.value + 90) % 360;
-};
+  for (const el of allElements) {
+    const computedStyle = getComputedStyle(el);
+    const isRoot = el === root;
 
-const printFormPdf = () => {
-  window.print();
+    if (hasUnsupportedColor(computedStyle.color)) {
+      el.style.color = "#000000";
+    }
+
+    if (hasUnsupportedColor(computedStyle.backgroundColor)) {
+      el.style.backgroundColor = isRoot ? "#ffffff" : "transparent";
+    }
+
+    if (
+      hasUnsupportedColor(computedStyle.borderTopColor) ||
+      hasUnsupportedColor(computedStyle.borderRightColor) ||
+      hasUnsupportedColor(computedStyle.borderBottomColor) ||
+      hasUnsupportedColor(computedStyle.borderLeftColor)
+    ) {
+      el.style.borderColor = "#000000";
+    }
+
+    if (hasUnsupportedColor(computedStyle.outlineColor)) {
+      el.style.outlineColor = "#000000";
+    }
+
+    if (hasUnsupportedColor(computedStyle.textDecorationColor)) {
+      el.style.textDecorationColor = "#000000";
+    }
+
+    if (hasUnsupportedColor(computedStyle.boxShadow)) {
+      el.style.boxShadow = "none";
+    }
+  }
 };
 
 const downloadDoc = async () => {
@@ -655,16 +621,45 @@ const downloadDoc = async () => {
     "กำลังสร้างไฟล์ PDF กรุณารอสักครู่...",
   );
   if (import.meta.client) {
-    const html2pdf = (await import('html2pdf.js')).default;
-    const element = document.getElementById('pdf-content');
-    const opt = {
-      margin:       0,
-      filename:     `ใบลา_${leaveRequest.value?.firstName}_${leaveRequest.value?.startDate}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
+    let sandbox: HTMLDivElement | null = null;
+    try {
+      await nextTick();
+      const html2pdfModule = await import("html2pdf.js");
+      const html2pdf = (html2pdfModule.default ?? html2pdfModule) as any;
+      const source = pdfContentRef.value;
+      if (!source) {
+        addToast("error", "ไม่พบเอกสารสำหรับดาวน์โหลด", "กรุณาลองใหม่อีกครั้ง");
+        return;
+      }
+
+      sandbox = document.createElement("div");
+      sandbox.style.position = "fixed";
+      sandbox.style.left = "0";
+      sandbox.style.top = "0";
+      sandbox.style.zIndex = "-1";
+      sandbox.style.pointerEvents = "none";
+      sandbox.style.background = "white";
+
+      const cloned = source.cloneNode(true) as HTMLElement;
+      sandbox.appendChild(cloned);
+      document.body.appendChild(sandbox);
+      normalizeUnsupportedPdfColors(cloned);
+
+      const opt = {
+        margin: 0,
+        filename: `ใบลา_${leaveRequest.value?.firstName}_${leaveRequest.value?.startDate}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      await html2pdf().set(opt).from(cloned).save();
+    } catch (error) {
+      console.error("PDF download failed (teacher):", error);
+      addToast("error", "ดาวน์โหลดไม่สำเร็จ", "ระบบไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      sandbox?.remove();
+    }
   }
 };
 
