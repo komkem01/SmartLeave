@@ -11,7 +11,7 @@
             </div>
             <div>
               <span class="text-lg font-bold text-slate-950 block leading-tight">SmartLeave</span>
-              <span class="text-3xs font-semibold text-slate-500 tracking-wider uppercase">โรงเรียนสะอาดประชาสรร</span>
+              <span class="text-3xs font-semibold text-slate-500 tracking-wider uppercase">โรงเรียนสะอาดประชาสรรพ์</span>
             </div>
           </div>
 

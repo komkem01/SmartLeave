@@ -142,48 +142,46 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
               <div>
                 <label class="block text-xs text-slate-700 mb-1">เวลาเริ่มลา</label>
-                <div class="rounded-xl border border-slate-300 bg-white p-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-                  <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <AppDropdown
-                      id="startHour"
-                      v-model="startHourModel"
-                      placeholder="ชั่วโมง"
-                      :options="hourOptions"
-                      :page-size="8"
-                      :page-size-options="[8, 12, 24]"
-                    />
-                    <span class="text-sm font-bold text-slate-400">:</span>
-                    <AppDropdown
-                      id="startMinute"
-                      v-model="startMinuteModel"
-                      placeholder="นาที"
-                      :options="minuteOptions"
-                      :page-size="10"
-                      :page-size-options="[10, 20, 30, 60]"
+                <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-2xs font-semibold uppercase tracking-wider text-slate-400">เวลาเริ่ม</p>
+                    <input
+                      v-model="form.startTime"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="5"
+                      placeholder="08:30"
+                      class="mt-0.5 block w-full bg-transparent text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                      @input="onTimeInput('start', $event)"
+                      @blur="onTimeBlur('start')"
                     />
                   </div>
                 </div>
               </div>
               <div>
                 <label class="block text-xs text-slate-700 mb-1">เวลาสิ้นสุดลา</label>
-                <div class="rounded-xl border border-slate-300 bg-white p-2.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-                  <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <AppDropdown
-                      id="endHour"
-                      v-model="endHourModel"
-                      placeholder="ชั่วโมง"
-                      :options="hourOptions"
-                      :page-size="8"
-                      :page-size-options="[8, 12, 24]"
-                    />
-                    <span class="text-sm font-bold text-slate-400">:</span>
-                    <AppDropdown
-                      id="endMinute"
-                      v-model="endMinuteModel"
-                      placeholder="นาที"
-                      :options="minuteOptions"
-                      :page-size="10"
-                      :page-size-options="[10, 20, 30, 60]"
+                <div class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2.5 shadow-sm focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
+                  <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-2xs font-semibold uppercase tracking-wider text-slate-400">เวลาสิ้นสุด</p>
+                    <input
+                      v-model="form.endTime"
+                      type="text"
+                      inputmode="numeric"
+                      maxlength="5"
+                      placeholder="17:30"
+                      class="mt-0.5 block w-full bg-transparent text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                      @input="onTimeInput('end', $event)"
+                      @blur="onTimeBlur('end')"
                     />
                   </div>
                 </div>
@@ -435,16 +433,6 @@ const defaultLeaveDate = getTodayLocalDate()
 const defaultStartTime = getCurrentTime()
 const defaultEndTime = getOneHourLaterTime()
 
-const hourOptions = Array.from({ length: 24 }, (_, hour) => {
-  const value = String(hour).padStart(2, '0')
-  return { label: value, value }
-})
-
-const minuteOptions = Array.from({ length: 60 }, (_, minute) => {
-  const value = String(minute).padStart(2, '0')
-  return { label: value, value }
-})
-
 const form = ref({
   type: '',
   startDate: defaultLeaveDate,
@@ -468,41 +456,50 @@ const normalizeTime = (timeText: string, fallback = '00:00') => {
   return `${hour}:${minute}`
 }
 
-const startHourModel = computed({
-  get: () => normalizeTime(form.value.startTime).split(':')[0] || '00',
-  set: (hour: string) => {
-    const minute = normalizeTime(form.value.startTime).split(':')[1] || '00'
-    form.value.startTime = `${hour}:${minute}`
-    validateDateRange()
-  },
-})
+const normalizeTypedTime = (timeText: string, fallback: string) => {
+  const digits = (timeText || '').replace(/\D/g, '').slice(0, 4)
+  if (!digits) return fallback
 
-const startMinuteModel = computed({
-  get: () => normalizeTime(form.value.startTime).split(':')[1] || '00',
-  set: (minute: string) => {
-    const hour = normalizeTime(form.value.startTime).split(':')[0] || '00'
-    form.value.startTime = `${hour}:${minute}`
-    validateDateRange()
-  },
-})
+  if (digits.length <= 2) {
+    return `${digits.padStart(2, '0')}:00`
+  }
 
-const endHourModel = computed({
-  get: () => normalizeTime(form.value.endTime).split(':')[0] || '00',
-  set: (hour: string) => {
-    const minute = normalizeTime(form.value.endTime).split(':')[1] || '00'
-    form.value.endTime = `${hour}:${minute}`
-    validateDateRange()
-  },
-})
+  if (digits.length === 3) {
+    return `${digits.slice(0, 1).padStart(2, '0')}:${digits.slice(1).padEnd(2, '0')}`
+  }
 
-const endMinuteModel = computed({
-  get: () => normalizeTime(form.value.endTime).split(':')[1] || '00',
-  set: (minute: string) => {
-    const hour = normalizeTime(form.value.endTime).split(':')[0] || '00'
-    form.value.endTime = `${hour}:${minute}`
-    validateDateRange()
-  },
-})
+  return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`
+}
+
+const onTimeInput = (target: 'start' | 'end', event: Event) => {
+  const input = event.target as HTMLInputElement
+  const digits = input.value.replace(/\D/g, '').slice(0, 4)
+
+  let formatted = digits
+  if (digits.length > 2) {
+    formatted = `${digits.slice(0, 2)}:${digits.slice(2)}`
+  }
+
+  input.value = formatted
+
+  if (target === 'start') {
+    form.value.startTime = formatted
+  } else {
+    form.value.endTime = formatted
+  }
+
+  validateDateRange()
+}
+
+const onTimeBlur = (target: 'start' | 'end') => {
+  if (target === 'start') {
+    form.value.startTime = normalizeTypedTime(form.value.startTime, defaultStartTime)
+  } else {
+    form.value.endTime = normalizeTypedTime(form.value.endTime, defaultEndTime)
+  }
+
+  validateDateRange()
+}
 
 const usedDaysByLeaveType = computed<Record<string, number>>(() => {
   const usage: Record<string, number> = {}
@@ -793,7 +790,7 @@ const handleSubmit = async () => {
   const start = new Date(`${form.value.startDate}T${form.value.startTime}:00`)
   const end = new Date(`${form.value.endDate}T${form.value.endTime}:00`)
   const totalMinutes = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 60000))
-  const totalDays = Number((totalMinutes / 1440).toFixed(4))
+  const totalDays = Number((totalMinutes / 480).toFixed(4))
 
   isLoading.value = true
   try {

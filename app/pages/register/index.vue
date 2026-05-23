@@ -12,7 +12,7 @@
         <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">SmartLeave</h2>
         <p class="mt-2 text-sm text-slate-500">
           ลงทะเบียนเข้าใช้งานระบบบริหารจัดการการลางานดิจิทัล
-          <span class="block mt-0.5 font-semibold text-slate-700 text-xs tracking-wider uppercase">โรงเรียนสะอาดประชาสรร</span>
+          <span class="block mt-0.5 font-semibold text-slate-700 text-xs tracking-wider uppercase">โรงเรียนสะอาดประชาสรรพ์</span>
         </p>
       </div>
 
@@ -203,7 +203,7 @@
     </div>
 
     <div class="mt-8 text-center">
-      <p class="text-xs text-slate-400 tracking-wide">&copy; 2026 โรงเรียนสะอาดประชาสรร. สงวนลิขสิทธิ์ระบบสารสนเทศภายใน</p>
+      <p class="text-xs text-slate-400 tracking-wide">&copy; 2026 โรงเรียนสะอาดประชาสรรพ์. สงวนลิขสิทธิ์ระบบสารสนเทศภายใน</p>
     </div>
   </div>
 </template>

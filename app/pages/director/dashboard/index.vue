@@ -14,7 +14,7 @@
               </div>
               <div>
                 <span class="text-lg font-bold text-slate-950 block leading-tight">SmartLeave</span>
-                <span class="text-3xs font-semibold text-slate-500 tracking-wider uppercase">โรงเรียนสะอาดประชาสรร</span>
+                <span class="text-3xs font-semibold text-slate-500 tracking-wider uppercase">โรงเรียนสะอาดประชาสรรพ์</span>
               </div>
             </div>
           </div>
@@ -134,7 +134,7 @@
             </svg>
           </div>
           <h3 class="font-bold text-slate-800">ไม่มีใบลาคงค้าง</h3>
-          <p class="text-sm text-slate-400">ใบคำร้องขอลาทั้งหมดของโรงเรียนสะอาดประชาสรรได้รับการพิจารณาครบถ้วนแล้ว</p>
+          <p class="text-sm text-slate-400">ใบคำร้องขอลาทั้งหมดของโรงเรียนสะอาดประชาสรรพ์ได้รับการพิจารณาครบถ้วนแล้ว</p>
         </div>
 
         <!-- รายการใบคำขอลาแบบการ์ด -->

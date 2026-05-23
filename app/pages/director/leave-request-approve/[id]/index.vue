@@ -11,7 +11,7 @@
             </div>
             <div>
               <span class="text-lg font-bold text-slate-950 block leading-tight">SmartLeave</span>
-              <span class="text-3xs font-semibold text-slate-500 tracking-wider uppercase">โรงเรียนสะอาดประชาสรร</span>
+              <span class="text-3xs font-semibold text-slate-500 tracking-wider uppercase">โรงเรียนสะอาดประชาสรรพ์</span>
             </div>
           </div>
 
@@ -99,7 +99,7 @@
                   <div class="text-center font-bold">แบบฟอร์มการขอลางาน</div>
 
                   <div class="text-right pt-1">
-                    <div>เขียนที่ โรงเรียนสะอาดประชาสรร</div>
+                    <div>เขียนที่ โรงเรียนสะอาดประชาสรรพ์</div>
                     <div>วันที่ {{ leaveRequest.startDate }}</div>
                   </div>
 
@@ -111,7 +111,7 @@
                     <span>{{ leaveRequest.type === 'vacation' ? '●' : '○' }} อื่นๆ (ระบุ) {{ getLeaveTypeText(leaveRequest.type) }}</span>
                   </div>
 
-                  <div>เรียน ผู้อำนวยการโรงเรียนสะอาดประชาสรร</div>
+                  <div>เรียน ผู้อำนวยการโรงเรียนสะอาดประชาสรรพ์</div>
 
                   <div>
                     ข้าพเจ้า {{ leaveRequest.prefix }}{{ leaveRequest.firstName }} {{ leaveRequest.lastName }}
@@ -195,7 +195,7 @@
                         <div class="font-semibold text-center">คำสั่ง</div>
                         <div class="mt-1 text-center">○ อนุญาต &nbsp;&nbsp;&nbsp; ○ ไม่อนุญาต</div>
                         <div class="mt-2">(ลงชื่อ)........................................................</div>
-                        <div>ผู้อำนวยการโรงเรียนสะอาดประชาสรร</div>
+                        <div>ผู้อำนวยการโรงเรียนสะอาดประชาสรรพ์</div>
                         <div>วันที่ ........... / ........... / ...........</div>
                       </div>
                     </div>

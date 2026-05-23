@@ -33,7 +33,7 @@
           <span
             class="block mt-0.5 font-semibold text-slate-700 text-xs tracking-wider uppercase"
           >
-            โรงเรียนสะอาดประชาสรร
+            โรงเรียนสะอาดประชาสรรพ์
           </span>
         </p>
       </div>
@@ -194,7 +194,7 @@
     <!-- ส่วนท้ายด้านล่าง -->
     <div class="mt-8 text-center">
       <p class="text-xs text-slate-400 tracking-wide">
-        &copy; 2026 โรงเรียนสะอาดประชาสรร. สงวนลิขสิทธิ์ระบบสารสนเทศภายใน
+        &copy; 2026 โรงเรียนสะอาดประชาสรรพ์. สงวนลิขสิทธิ์ระบบสารสนเทศภายใน
       </p>
     </div>
   </div>
