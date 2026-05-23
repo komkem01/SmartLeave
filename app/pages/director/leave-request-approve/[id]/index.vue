@@ -400,6 +400,80 @@ interface ApiCurrentUser {
   lastname?: string
 }
 
+interface PdfStats {
+  taken?: number
+  this_time?: number
+  total?: number
+}
+
+interface LeaveRequestPdfApi {
+  type: 'vacation' | 'sick' | 'personal' | 'maternity'
+  written_at?: string
+  date?: string
+  to?: string
+  name?: string
+  position?: string
+  department?: string
+  accumulated_days?: number
+  start_date?: string
+  end_date?: string
+  total_days?: number
+  reason?: string
+  last_leave_type?: string
+  last_leave_start_date?: string
+  last_leave_end_date?: string
+  last_leave_total_days?: number
+  location?: string
+  province?: string
+  district?: string
+  sub_district?: string
+  zipcode?: string
+  contact_address?: string
+  email?: string
+  phone?: string
+  substitute_name?: string
+  stats?: {
+    vacation?: PdfStats
+    sick?: PdfStats
+    personal?: PdfStats
+    maternity?: PdfStats
+  }
+}
+
+interface LeavePreviewData {
+  type: 'vacation' | 'sick' | 'personal' | 'maternity'
+  writtenAt?: string
+  date?: string
+  to?: string
+  name?: string
+  position?: string
+  department?: string
+  accumulatedDays?: number
+  startDate?: string
+  endDate?: string
+  totalDays?: number
+  reason?: string
+  lastLeaveType?: string
+  lastLeaveStartDate?: string
+  lastLeaveEndDate?: string
+  lastLeaveTotalDays?: number
+  location?: string
+  province?: string
+  district?: string
+  subDistrict?: string
+  zipcode?: string
+  contactAddress?: string
+  email?: string
+  phone?: string
+  substituteName?: string
+  stats?: {
+    vacation?: { taken?: number; thisTime?: number; total?: number }
+    sick?: { taken?: number; thisTime?: number; total?: number }
+    personal?: { taken?: number; thisTime?: number; total?: number }
+    maternity?: { taken?: number; thisTime?: number; total?: number }
+  }
+}
+
 definePageMeta({
   middleware: ['require-auth'],
 })
@@ -413,35 +487,15 @@ const isLoading = ref(false)
 const isActionLoading = ref(false)
 const currentUser = ref<ApiCurrentUser | null>(null)
 const leaveRequest = ref<LeaveRequest | null>(null)
+const previewPdfData = ref<LeavePreviewData | null>(null)
 const formPdfFileName = 'แบบใบลาของข้าราชการ.pdf'
 
 const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const monthLongTH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 
 const computedPreviewData = computed(() => {
-  if (!leaveRequest.value) return {};
-  const lr = leaveRequest.value;
-  return {
-    type: lr.type,
-    writtenAt: 'โรงเรียนสะอาดประชาสรรพ์',
-    date: lr.startDate,
-    to: 'ผู้อำนวยการโรงเรียนสะอาดประชาสรรพ์',
-    name: `${lr.prefix}${lr.firstName} ${lr.lastName}`,
-    position: lr.position,
-    department: lr.department,
-    startDate: lr.startDate,
-    endDate: lr.endDate,
-    totalDays: lr.totalDays,
-    reason: lr.reason,
-    contactAddress: `${lr.location} โทร ${lr.email}`,
-    stats: {
-      sick: { taken: 0, thisTime: lr.type === 'sick' ? lr.totalDays : 0, total: lr.type === 'sick' ? lr.totalDays : 0 },
-      personal: { taken: 0, thisTime: lr.type === 'personal' ? lr.totalDays : 0, total: lr.type === 'personal' ? lr.totalDays : 0 },
-      maternity: { taken: 0, thisTime: lr.type === 'maternity' ? lr.totalDays : 0, total: lr.type === 'maternity' ? lr.totalDays : 0 },
-      vacation: { taken: 0, thisTime: lr.type === 'vacation' ? lr.totalDays : 0, total: lr.type === 'vacation' ? lr.totalDays : 0 }
-    }
-  };
-});
+  return previewPdfData.value || {}
+})
 
 const headerDisplayName = computed(() => {
   const first = currentUser.value?.firstname?.trim() || ''
@@ -517,13 +571,75 @@ const loadLeaveRequest = async () => {
   const id = String(route.params.id || '')
   if (!id) {
     leaveRequest.value = null
+    previewPdfData.value = null
     return
   }
 
-  const leaveRes = await $fetch<any>(`${BASE}/leave-request/${id}`)
+  const [leaveRes, pdfRes] = await Promise.all([
+    $fetch<any>(`${BASE}/leave-request/${id}`),
+    $fetch<any>(`${BASE}/leave-request/${id}/pdf-data`),
+  ])
+
   const lr = (leaveRes?.data ?? null) as ApiLeaveRequest | null
+  const pdf = (pdfRes?.data ?? null) as LeaveRequestPdfApi | null
   if (!lr) {
     leaveRequest.value = null
+    previewPdfData.value = null
+    return
+  }
+
+  if (pdf) {
+    previewPdfData.value = {
+      type: pdf.type,
+      writtenAt: pdf.written_at,
+      date: pdf.date,
+      to: pdf.to,
+      name: pdf.name,
+      position: pdf.position,
+      department: pdf.department,
+      accumulatedDays: pdf.accumulated_days,
+      startDate: pdf.start_date,
+      endDate: pdf.end_date,
+      totalDays: pdf.total_days,
+      reason: pdf.reason,
+      lastLeaveType: pdf.last_leave_type,
+      lastLeaveStartDate: pdf.last_leave_start_date,
+      lastLeaveEndDate: pdf.last_leave_end_date,
+      lastLeaveTotalDays: pdf.last_leave_total_days,
+      location: pdf.location,
+      province: pdf.province,
+      district: pdf.district,
+      subDistrict: pdf.sub_district,
+      zipcode: pdf.zipcode,
+      contactAddress: pdf.contact_address,
+      email: pdf.email,
+      phone: pdf.phone,
+      substituteName: pdf.substitute_name,
+      stats: {
+        vacation: {
+          taken: pdf.stats?.vacation?.taken,
+          thisTime: pdf.stats?.vacation?.this_time,
+          total: pdf.stats?.vacation?.total,
+        },
+        sick: {
+          taken: pdf.stats?.sick?.taken,
+          thisTime: pdf.stats?.sick?.this_time,
+          total: pdf.stats?.sick?.total,
+        },
+        personal: {
+          taken: pdf.stats?.personal?.taken,
+          thisTime: pdf.stats?.personal?.this_time,
+          total: pdf.stats?.personal?.total,
+        },
+        maternity: {
+          taken: pdf.stats?.maternity?.taken,
+          thisTime: pdf.stats?.maternity?.this_time,
+          total: pdf.stats?.maternity?.total,
+        },
+      },
+    }
+  } else {
+    previewPdfData.value = null
     return
   }
 
@@ -531,6 +647,7 @@ const loadLeaveRequest = async () => {
   const member = (memberRes?.data ?? null) as ApiMember | null
   if (!member) {
     leaveRequest.value = null
+    previewPdfData.value = null
     return
   }
 
@@ -561,11 +678,11 @@ const loadLeaveRequest = async () => {
     endDate: formatDateLongThai(lr.end_date),
     dateString,
     totalDays: lr.total_days,
-    location: `${subDistrictName} ${districtName} ${provinceName}`,
-    province: provinceName,
-    district: districtName,
-    subDistrict: subDistrictName,
-    zipcode: zipcodeName,
+    location: pdf?.location || lr.contact_address || '-',
+    province: pdf?.province || provinceName,
+    district: pdf?.district || districtName,
+    subDistrict: pdf?.sub_district || subDistrictName,
+    zipcode: pdf?.zipcode || zipcodeName,
     reason: lr.reason,
     attachmentUrl: lr.attachment_url || '',
     status: lr.status,
@@ -580,6 +697,7 @@ const loadPageData = async () => {
     await Promise.all([fetchCurrentUser(), loadLeaveRequest()])
   } catch {
     leaveRequest.value = null
+    previewPdfData.value = null
     addToast('error', 'โหลดข้อมูลไม่สำเร็จ', 'ไม่สามารถดึงรายละเอียดใบคำร้องได้ กรุณาลองใหม่อีกครั้ง')
   } finally {
     isLoading.value = false

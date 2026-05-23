@@ -456,6 +456,11 @@ interface LeaveRequestPdfApi {
   last_leave_start_date?: string;
   last_leave_end_date?: string;
   last_leave_total_days?: number;
+  location?: string;
+  province?: string;
+  district?: string;
+  sub_district?: string;
+  zipcode?: string;
   contact_address?: string;
   email?: string;
   phone?: string;
@@ -485,6 +490,11 @@ interface LeavePreviewData {
   lastLeaveStartDate?: string;
   lastLeaveEndDate?: string;
   lastLeaveTotalDays?: number;
+  location?: string;
+  province?: string;
+  district?: string;
+  subDistrict?: string;
+  zipcode?: string;
   contactAddress?: string;
   email?: string;
   phone?: string;
@@ -720,6 +730,11 @@ const loadDetail = async () => {
       lastLeaveStartDate: pdf.last_leave_start_date,
       lastLeaveEndDate: pdf.last_leave_end_date,
       lastLeaveTotalDays: pdf.last_leave_total_days,
+      location: pdf.location,
+      province: pdf.province,
+      district: pdf.district,
+      subDistrict: pdf.sub_district,
+      zipcode: pdf.zipcode,
       contactAddress: pdf.contact_address,
       email: pdf.email,
       phone: pdf.phone,
@@ -810,11 +825,11 @@ const loadDetail = async () => {
       endDate: formatDateLongBE(lr.end_date),
       dateString,
       totalDays: Number(lr.total_days || 0),
-      location: `${subDistrictName} ${districtName} ${provinceName}`,
-      province: provinceName,
-      district: districtName,
-      subDistrict: subDistrictName,
-      zipcode: zipcodeName,
+      location: pdf.location || lr.contact_address || "-",
+      province: pdf.province || provinceName,
+      district: pdf.district || districtName,
+      subDistrict: pdf.sub_district || subDistrictName,
+      zipcode: pdf.zipcode || zipcodeName,
       reason: lr.reason,
       status: lr.status,
       approvedByName: approver

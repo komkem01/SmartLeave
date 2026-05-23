@@ -190,25 +190,53 @@
     <!-- Contact Info -->
     <div class="mb-6 leading-relaxed pl-12 space-y-1 text-[14pt]">
       <div class="flex items-baseline w-full">
-        <span class="shrink-0"
-          >ในระหว่างลาจะติดต่อข้าพเจ้าได้ที่ (ที่อยู่)</span
-        >
+        <span class="shrink-0">สถานที่ </span>
         <span class="dotted-line flex-grow text-center ml-2">{{
-          data.contactAddress || "&nbsp;"
+          data.location || data.contactAddress || "&nbsp;"
         }}</span>
       </div>
-      <div class="flex gap-4 w-full">
-        <div class="flex items-baseline flex-grow">
-          <span class="shrink-0">อีเมล</span>
-          <span class="dotted-line flex-grow text-center ml-2">{{
-            data.email || "&nbsp;"
+      <div class="grid grid-cols-4 gap-3 w-full">
+        <div class="flex items-baseline">
+          <span class="shrink-0">จังหวัด</span>
+          <span class="dotted-line flex-grow text-center ml-1">{{
+            data.province || "&nbsp;"
           }}</span>
         </div>
-        <div class="flex items-baseline w-[280px]">
-          <span class="shrink-0">เบอร์โทรศัพท์</span>
-          <span class="dotted-line flex-grow text-center ml-2">{{
-            data.phone || "&nbsp;"
+        <div class="flex items-baseline">
+          <span class="shrink-0">อำเภอ</span>
+          <span class="dotted-line flex-grow text-center ml-1">{{
+            data.district || "&nbsp;"
           }}</span>
+        </div>
+        <div class="flex items-baseline">
+          <span class="shrink-0">ตำบล</span>
+          <span class="dotted-line flex-grow text-center ml-1">{{
+            data.subDistrict || "&nbsp;"
+          }}</span>
+        </div>
+        <div class="flex items-baseline">
+          <span class="shrink-0">รหัสไปรษณีย์</span>
+          <span class="dotted-line flex-grow text-center ml-1">{{
+            data.zipcode || "&nbsp;"
+          }}</span>
+        </div>
+      </div>
+      <!-- Personal Contact Info -->
+      <div class="w-full">
+        <p class="text-[14pt]">ข้อมูลติดต่อส่วนตัว</p>
+        <div class="flex gap-4 w-full mt-1">
+          <div class="flex items-baseline flex-grow">
+            <span class="shrink-0">อีเมล</span>
+            <span class="dotted-line flex-grow text-center ml-2">{{
+              data.email || "&nbsp;"
+            }}</span>
+          </div>
+          <div class="flex items-baseline w-[280px]">
+            <span class="shrink-0">เบอร์โทรศัพท์</span>
+            <span class="dotted-line flex-grow text-center ml-2">{{
+              data.phone || "&nbsp;"
+            }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -442,6 +470,11 @@ interface LeaveData {
   lastLeaveEndDate?: string;
   lastLeaveTotalDays?: number | string;
   contactAddress?: string;
+  location?: string;
+  province?: string;
+  district?: string;
+  subDistrict?: string;
+  zipcode?: string;
   email?: string;
   phone?: string;
   substituteName?: string;
@@ -519,7 +552,7 @@ const formatThaiDate = (dateStr?: string) => {
   }
   .a4-page {
     padding: 0;
-    max-w: 100%;
+    max-width: 100%;
   }
 }
 </style>
