@@ -103,6 +103,59 @@
 
       </div>
 
+      <div v-if="canApproveMembers" class="space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+            <span class="w-1.5 h-4 bg-emerald-600 rounded-full"></span>
+            ผู้สมัครใหม่รออนุมัติ
+          </h2>
+          <span class="inline-flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+            {{ pendingMembers.length }} บัญชีรออนุมัติ
+          </span>
+        </div>
+
+        <div v-if="pendingMembers.length === 0" class="bg-white p-8 text-center rounded-2xl border border-slate-200 shadow-sm space-y-2">
+          <p class="text-sm font-bold text-slate-800">ไม่มีผู้สมัครใหม่ค้างอนุมัติ</p>
+          <p class="text-xs text-slate-400">เมื่อมีครูลงทะเบียนใหม่ รายชื่อจะปรากฏในส่วนนี้ทันที</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 gap-3">
+          <div
+            v-for="member in previewPendingMembers"
+            :key="member.id"
+            class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          >
+            <div class="space-y-1">
+              <p class="text-sm font-bold text-slate-900">
+                {{ member.firstname }} {{ member.lastname }}
+              </p>
+              <p class="text-xs text-slate-500">{{ member.email }}</p>
+              <p class="text-xs text-slate-500">{{ member.department || 'ไม่ระบุกลุ่มสาระ' }}</p>
+              <p class="text-3xs font-semibold text-slate-400">สมัครเมื่อ {{ formatDisplayDateTime(member.created_at) }}</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="px-4 py-2 rounded-xl text-xs font-bold text-rose-700 border border-rose-200 bg-rose-50 hover:bg-rose-100 transition-colors"
+                :disabled="memberApprovalActionLoadingId === member.id"
+                @click="approveMember(member.id, false)"
+              >
+                ปฏิเสธ
+              </button>
+              <button
+                type="button"
+                class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                :disabled="memberApprovalActionLoadingId === member.id"
+                @click="approveMember(member.id, true)"
+              >
+                {{ memberApprovalActionLoadingId === member.id ? 'กำลังบันทึก...' : 'อนุมัติบัญชี' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ส่วนจัดการคำขออนุมัติการลา (Leave Approvals Section) -->
       <div class="space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -471,7 +524,10 @@ interface ApiMember {
   id: string
   firstname: string
   lastname: string
+  email: string
   department?: string
+  approval_status?: 'pending' | 'approved' | 'rejected'
+  created_at: string
 }
 
 interface ApiLeaveType {
@@ -494,7 +550,7 @@ interface ApiDashboardSummary {
 }
 
 definePageMeta({
-  middleware: ['require-auth'],
+  middleware: ['require-director'],
 })
 
 const isLoading = ref(false)
@@ -509,6 +565,8 @@ const totalMembers = ref<number>(0)
 const filterStatus = ref<'all' | 'approved' | 'rejected'>('all')
 const pendingRequests = ref<LeaveRequest[]>([])
 const actionedHistory = ref<LeaveRequest[]>([])
+const pendingMembers = ref<ApiMember[]>([])
+const memberApprovalActionLoadingId = ref<string>('')
 
 const openReject = ref<boolean>(false)
 const rejectReasonText = ref<string>('')
@@ -529,6 +587,8 @@ const headerDisplayName = computed(() => {
   return fullName ? `ผอ.${fullName}` : 'ผู้อำนวยการ'
 })
 
+const canApproveMembers = computed(() => currentUser.value?.role === 'school_admin')
+
 const headerInitials = computed(() => {
   const first = currentUser.value?.firstname?.trim() || ''
   const last = currentUser.value?.lastname?.trim() || ''
@@ -539,6 +599,7 @@ const headerInitials = computed(() => {
 })
 
 const previewPendingRequests = computed<LeaveRequest[]>(() => pendingRequests.value.slice(0, previewLimit))
+const previewPendingMembers = computed<ApiMember[]>(() => pendingMembers.value.slice(0, 5))
 
 const filteredHistory = computed<LeaveRequest[]>(() => {
   if (filterStatus.value === 'all') return actionedHistory.value
@@ -628,6 +689,60 @@ const fetchCurrentUser = async () => {
   currentUser.value = (meRes?.data ?? null) as ApiCurrentUser | null
 }
 
+const fetchPendingMembers = async () => {
+  if (!import.meta.client) return
+
+  const token = localStorage.getItem('smartleave:access_token')
+  if (!token) {
+    pendingMembers.value = []
+    return
+  }
+
+  try {
+    const pendingRes = await $fetch<any>(`${BASE}/member/pending`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    pendingMembers.value = (pendingRes?.data ?? []) as ApiMember[]
+  } catch (error: any) {
+    const statusCode = Number(error?.statusCode || error?.data?.statusCode || 0)
+    if (statusCode === 403) {
+      pendingMembers.value = []
+      return
+    }
+    throw error
+  }
+}
+
+const approveMember = async (memberID: string, approved: boolean) => {
+  memberApprovalActionLoadingId.value = memberID
+
+  try {
+    const token = import.meta.client ? localStorage.getItem('smartleave:access_token') : ''
+    await $fetch(`${BASE}/member/${memberID}/approve`, {
+      method: 'PATCH',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: {
+        approved,
+      },
+    })
+
+    await fetchDashboardData()
+
+    if (approved) {
+      addToast('success', 'อนุมัติบัญชีสำเร็จ', 'ผู้สมัครสามารถเข้าสู่ระบบได้แล้ว')
+    } else {
+      addToast('info', 'ปฏิเสธบัญชีสำเร็จ', 'ระบบบันทึกผลการปฏิเสธบัญชีเรียบร้อยแล้ว')
+    }
+  } catch {
+    addToast('error', 'อัปเดตสถานะบัญชีไม่สำเร็จ', 'ไม่สามารถบันทึกผลการอนุมัติได้ กรุณาลองใหม่อีกครั้ง')
+  } finally {
+    memberApprovalActionLoadingId.value = ''
+  }
+}
+
 const computeStats = (allRequests: ApiLeaveRequest[]) => {
   const now = new Date()
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -676,7 +791,7 @@ const fetchDashboardSummary = async (): Promise<boolean> => {
 const fetchDashboardData = async () => {
   isLoading.value = true
   try {
-    await Promise.all([fetchCurrentUser(), fetchReferenceData()])
+    await Promise.all([fetchCurrentUser(), fetchReferenceData(), fetchPendingMembers()])
     const leaveRes = await $fetch<any>(`${BASE}/leave-request`)
     const allRequests = (leaveRes?.data ?? []) as ApiLeaveRequest[]
 
