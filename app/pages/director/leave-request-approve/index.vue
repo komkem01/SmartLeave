@@ -752,7 +752,7 @@ interface ApiCurrentUser {
 }
 
 definePageMeta({
-  middleware: ['require-auth'],
+  middleware: ['require-director'],
 })
 
 const isLoading = ref(false)

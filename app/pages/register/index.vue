@@ -808,14 +808,14 @@ const handleRegister = async () => {
         district_id: f.districtId,
         sub_district_id: f.subDistrictId,
         zipcode_id: f.zipcodeId,
-        is_active: true,
+        is_active: false,
       },
     });
 
     addToast(
       "success",
-      "ลงทะเบียนสำเร็จ",
-      `ลงทะเบียน ${f.firstName} ${f.lastName} เรียบร้อยแล้ว`,
+      "ส่งคำขอลงทะเบียนสำเร็จ",
+      `บัญชีของ ${f.firstName} ${f.lastName} อยู่ระหว่างรอแอดมินโรงเรียนอนุมัติ`,
     );
     router.push("/login");
   } catch (error: any) {

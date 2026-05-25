@@ -302,8 +302,13 @@ const handleLogin = async () => {
     }
 
     const isDirector = account.role === "director";
-    const redirectTo = isDirector ? "/director/dashboard" : "/teacher/dashboard";
-    const roleName = isDirector ? "ผู้อำนวยการ" : "ครู";
+    const isSchoolAdmin = account.role === "school_admin";
+    const redirectTo = isSchoolAdmin
+      ? "/school-admin/dashboard"
+      : isDirector
+        ? "/director/dashboard"
+        : "/teacher/dashboard";
+    const roleName = isSchoolAdmin ? "แอดมินโรงเรียน" : isDirector ? "ผู้อำนวยการ" : "ครู";
     const displayName = `${account.firstname || ""} ${account.lastname || ""}`.trim();
 
     addToast(
@@ -317,9 +322,17 @@ const handleLogin = async () => {
       typeof error === "object" && error !== null
         ? Number(error?.statusCode || error?.data?.statusCode || 0)
         : 0;
+    const serverMessage =
+      typeof error === "object" && error !== null
+        ? String(error?.data?.message || error?.statusMessage || "")
+        : "";
     const message =
       statusCode === 401
         ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+        : statusCode === 412 && serverMessage.includes("member-pending-approval")
+          ? "บัญชีของคุณอยู่ระหว่างรอแอดมินโรงเรียนอนุมัติ"
+          : statusCode === 412 && serverMessage.includes("member-rejected")
+            ? "บัญชีของคุณถูกปฏิเสธการเข้าใช้งาน กรุณาติดต่อแอดมินโรงเรียน"
         : "ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง";
 
     addToast(

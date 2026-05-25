@@ -461,7 +461,7 @@ interface LeavePreviewData {
 }
 
 definePageMeta({
-  middleware: ['require-auth'],
+  middleware: ['require-director'],
 })
 
 const openApproveConfirm = ref(false)
