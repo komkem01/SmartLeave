@@ -88,7 +88,7 @@
           <button
             type="button"
             @click="downloadDoc"
-            :disabled="leaveRequest?.status !== 'approved'"
+            :disabled="leaveRequest?.status === 'pending'"
             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:hover:bg-blue-300 disabled:cursor-not-allowed transition-colors"
           >
             ดาวน์โหลด PDF
@@ -408,6 +408,8 @@ interface LeaveRequestPdfApi {
   email?: string;
   phone?: string;
   substitute_name?: string;
+  teacher_signature_url?: string
+  director_signature_url?: string
   stats?: {
     vacation?: PdfStats;
     sick?: PdfStats;
@@ -442,6 +444,11 @@ interface LeavePreviewData {
   email?: string;
   phone?: string;
   substituteName?: string;
+  teacherSignatureUrl?: string
+  directorSignatureUrl?: string
+  directorName?: string
+  approvalDecision?: "approved" | "rejected" | "pending"
+  commanderComment?: string
   stats?: {
     vacation?: { taken?: number; thisTime?: number; total?: number };
     sick?: { taken?: number; thisTime?: number; total?: number };
@@ -456,7 +463,18 @@ const previewPdfData = ref<LeavePreviewData | null>(null);
 const pdfContentRef = ref<HTMLElement | null>(null);
 
 const computedPreviewData = computed(() => {
-  return previewPdfData.value || {};
+  return {
+    ...(previewPdfData.value || {}),
+    directorName:
+      previewPdfData.value?.directorName || leaveRequest.value?.approvedByName || "",
+    approvalDecision:
+      previewPdfData.value?.approvalDecision || leaveRequest.value?.status || "pending",
+    commanderComment:
+      previewPdfData.value?.commanderComment ||
+      (leaveRequest.value?.status === "rejected"
+        ? leaveRequest.value?.rejectReason || ""
+        : ""),
+  };
 });
 
 const profileFullName = computed(() => {
@@ -606,11 +624,11 @@ const normalizeUnsupportedPdfColors = (root: HTMLElement) => {
 };
 
 const downloadDoc = async () => {
-  if (!leaveRequest.value || leaveRequest.value.status !== "approved") {
+  if (!leaveRequest.value || leaveRequest.value.status === "pending") {
     addToast(
       "warning",
       "ยังดาวน์โหลดไม่ได้",
-      "ดาวน์โหลดเอกสารได้เมื่อสถานะอนุมัติแล้วเท่านั้น",
+      "ดาวน์โหลดเอกสารได้เมื่อสถานะอนุมัติหรือปฏิเสธแล้วเท่านั้น",
     );
     return;
   }
@@ -624,6 +642,10 @@ const downloadDoc = async () => {
     let sandbox: HTMLDivElement | null = null;
     try {
       await nextTick();
+      if ((document as any).fonts?.ready) {
+        await (document as any).fonts.ready;
+      }
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
       const html2pdfModule = await import("html2pdf.js");
       const html2pdf = (html2pdfModule.default ?? html2pdfModule) as any;
       const source = pdfContentRef.value;
@@ -653,7 +675,15 @@ const downloadDoc = async () => {
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       };
 
-      await html2pdf().set(opt).from(cloned).save();
+      const worker = html2pdf().set(opt).from(cloned);
+      const blobUrl = (await worker.outputPdf("bloburl")) as string;
+      const previewTab = window.open(blobUrl, "_blank", "noopener,noreferrer");
+
+      if (!previewTab) {
+        await worker.save();
+      }
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
     } catch (error) {
       console.error("PDF download failed (teacher):", error);
       addToast("error", "ดาวน์โหลดไม่สำเร็จ", "ระบบไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง");
@@ -734,6 +764,10 @@ const loadDetail = async () => {
       email: pdf.email,
       phone: pdf.phone,
       substituteName: pdf.substitute_name,
+      teacherSignatureUrl: pdf.teacher_signature_url,
+      directorSignatureUrl: pdf.director_signature_url,
+      approvalDecision: lr.status,
+      commanderComment: lr.status === "rejected" ? lr.reject_reason || "" : "",
       stats: {
         vacation: {
           taken: pdf.stats?.vacation?.taken,
@@ -783,6 +817,12 @@ const loadDetail = async () => {
         }).catch(() => null)
       : null;
     const approver = (approverRes?.data ?? null) as ApiMember | null;
+
+    if (previewPdfData.value) {
+      previewPdfData.value.directorName = approver
+        ? `ผอ.${(approver.firstname || "").trim()} ${(approver.lastname || "").trim()}`.trim()
+        : "";
+    }
 
     const [
       prefixName,

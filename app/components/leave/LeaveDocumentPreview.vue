@@ -1,17 +1,17 @@
 <template>
   <div
-    class="a4-page font-sarabun text-[14pt] leading-snug text-black max-w-[210mm] mx-auto p-10 bg-white"
+    class="a4-page font-sarabun text-[10pt] leading-[1.35] font-normal text-[#111827] max-w-[210mm] mx-auto bg-white px-6 py-4"
     ref="documentRef"
   >
     <!-- Header -->
     <div
-      class="flex justify-center items-center mb-6 w-full font-bold text-[18pt]"
+      class="flex justify-center items-center mb-3 w-full font-bold text-[14pt] tracking-[0.01em]"
     >
       แบบฟอร์มการลา
     </div>
 
-    <div class="text-right mb-4 flex justify-end">
-      <div class="w-2/3 max-w-[350px] text-left text-[14pt]">
+    <div class="text-right mb-2 flex justify-end">
+      <div class="w-2/3 max-w-[360px] text-left text-[10pt]">
         <div class="flex items-baseline">
           <span class="shrink-0">เขียนที่</span>
           <span class="dotted-line flex-grow text-center ml-2">{{
@@ -28,19 +28,19 @@
     </div>
 
     <!-- Title -->
-    <div class="mb-4 text-[14pt]">
+    <div class="mb-4 text-[10pt] space-y-0.5">
       <div class="flex items-baseline">
         <b class="shrink-0 w-16 font-bold">เรื่อง</b>
         <span>{{ subjectText }}</span>
       </div>
-      <div class="flex items-baseline mt-1">
+      <div class="flex items-baseline">
         <b class="shrink-0 w-16 font-bold">เรียน</b>
         <span>{{ data.to || "ผู้อำนวยการ" }}</span>
       </div>
     </div>
 
     <!-- Body -->
-    <div class="flex items-baseline mb-4 leading-relaxed pl-12 text-[14pt]">
+    <div class="flex items-baseline mb-4 leading-[1.45] pl-10 text-[10pt]">
       <span class="shrink-0">ข้าพเจ้า</span>
       <span class="dotted-line flex-grow text-center mx-2">{{
         data.name || "&nbsp;"
@@ -58,9 +58,9 @@
     <!-- Vacation Specific -->
     <div
       v-if="data.type === 'vacation'"
-      class="mb-4 leading-relaxed text-[14pt]"
+      class="mb-2 leading-snug text-[10pt]"
     >
-      <div class="flex items-baseline pl-12">
+      <div class="flex items-baseline pl-10">
         <span class="shrink-0">มีวันลาพักผ่อนสะสม</span>
         <span class="dotted-line flex-grow text-center mx-2">{{
           data.accumulatedDays || "-"
@@ -75,7 +75,7 @@
         }}</span>
         <span class="shrink-0">วันทำการ</span>
       </div>
-      <div class="flex items-baseline pl-12 mt-1">
+      <div class="flex items-baseline pl-10 mt-1">
         <span class="shrink-0">ขอลาพักผ่อนตั้งแต่วันที่</span>
         <span class="dotted-line flex-grow text-center mx-2">{{
           formatThaiDate(data.startDate)
@@ -93,12 +93,12 @@
     </div>
 
     <!-- Sick/Personal/Maternity Specific -->
-    <div v-else class="mb-4 leading-relaxed text-[14pt]">
-      <div class="flex items-baseline flex-wrap pl-12 gap-y-1">
+    <div v-else class="mb-2 leading-snug text-[10pt]">
+      <div class="flex items-baseline flex-wrap pl-10 gap-y-1">
         <span class="shrink-0">ขอลา</span>
         <span class="inline-flex items-center ml-4 shrink-0 select-none">
           <span
-            class="w-4 h-4 border border-black inline-flex items-center justify-center mr-1 text-[10pt] font-bold"
+            class="pdf-checkbox mr-1 text-[10pt] font-bold"
           >
             <span v-if="data.type === 'sick'">✓</span>
           </span>
@@ -106,7 +106,7 @@
         </span>
         <span class="inline-flex items-center ml-4 shrink-0 select-none">
           <span
-            class="w-4 h-4 border border-black inline-flex items-center justify-center mr-1 text-[10pt] font-bold"
+            class="pdf-checkbox mr-1 text-[10pt] font-bold"
           >
             <span v-if="data.type === 'personal'">✓</span>
           </span>
@@ -114,7 +114,7 @@
         </span>
         <span class="inline-flex items-center ml-4 shrink-0 select-none">
           <span
-            class="w-4 h-4 border border-black inline-flex items-center justify-center mr-1 text-[10pt] font-bold"
+            class="pdf-checkbox mr-1 text-[10pt] font-bold"
           >
             <span v-if="data.type === 'maternity'">✓</span>
           </span>
@@ -126,7 +126,7 @@
         }}</span>
       </div>
 
-      <div class="flex items-baseline pl-12 mt-1">
+      <div class="flex items-baseline pl-10 mt-1">
         <span class="shrink-0">ตั้งแต่วันที่</span>
         <span class="dotted-line flex-grow text-center mx-2">{{
           formatThaiDate(data.startDate)
@@ -142,11 +142,11 @@
         <span class="shrink-0">วัน</span>
       </div>
 
-      <div class="flex items-baseline pl-12 mt-1">
+      <div class="flex items-baseline pl-10 mt-1">
         <span class="shrink-0">ข้าพเจ้าได้ลา</span>
         <span class="inline-flex items-center ml-4 shrink-0 select-none">
           <span
-            class="w-4 h-4 border border-black inline-flex items-center justify-center mr-1 text-[10pt] font-bold"
+            class="pdf-checkbox mr-1 text-[10pt] font-bold"
           >
             <span v-if="data.lastLeaveType === 'sick'">✓</span>
           </span>
@@ -154,7 +154,7 @@
         </span>
         <span class="inline-flex items-center ml-4 shrink-0 select-none">
           <span
-            class="w-4 h-4 border border-black inline-flex items-center justify-center mr-1 text-[10pt] font-bold"
+            class="pdf-checkbox mr-1 text-[10pt] font-bold"
           >
             <span v-if="data.lastLeaveType === 'personal'">✓</span>
           </span>
@@ -162,7 +162,7 @@
         </span>
         <span class="inline-flex items-center ml-4 shrink-0 select-none">
           <span
-            class="w-4 h-4 border border-black inline-flex items-center justify-center mr-1 text-[10pt] font-bold"
+            class="pdf-checkbox mr-1 text-[10pt] font-bold"
           >
             <span v-if="data.lastLeaveType === 'maternity'">✓</span>
           </span>
@@ -170,7 +170,7 @@
         </span>
       </div>
 
-      <div class="flex items-baseline pl-12 mt-1">
+      <div class="flex items-baseline pl-10 mt-1">
         <span class="shrink-0">ครั้งสุดท้ายตั้งแต่วันที่</span>
         <span class="dotted-line flex-grow text-center mx-2">{{
           formatThaiDate(data.lastLeaveStartDate)
@@ -188,7 +188,7 @@
     </div>
 
     <!-- Contact Info -->
-    <div class="mb-6 leading-relaxed pl-12 space-y-1 text-[14pt]">
+    <div class="mb-3 leading-[1.4] pl-10 space-y-1 text-[10pt]">
       <div class="flex items-baseline w-full">
         <span class="shrink-0">สถานที่ </span>
         <span class="dotted-line flex-grow text-center ml-2">{{
@@ -223,7 +223,7 @@
       </div>
       <!-- Personal Contact Info -->
       <div class="w-full">
-        <p class="text-[14pt]">ข้อมูลติดต่อส่วนตัว</p>
+        <p class="font-semibold">ข้อมูลติดต่อส่วนตัว</p>
         <div class="flex gap-4 w-full mt-1">
           <div class="flex items-baseline flex-grow">
             <span class="shrink-0">อีเมล</span>
@@ -242,10 +242,19 @@
     </div>
 
     <!-- Signatures -->
-    <div class="flex justify-end mb-6 text-[14pt]">
+    <div class="flex justify-end mb-3 text-[10pt]">
       <div class="text-center w-1/2">
         <p>ขอแสดงความนับถือ</p>
-        <p class="mt-6">
+        <div class="signature-slot mt-2">
+          <img
+            v-if="data.teacherSignatureUrl"
+            :src="data.teacherSignatureUrl"
+            alt="Teacher signature"
+            class="signature-image"
+            crossorigin="anonymous"
+          />
+        </div>
+        <p class="mt-3">
           (ลงชื่อ)........................................................
         </p>
         <p class="mt-1 flex justify-center items-baseline">
@@ -255,26 +264,27 @@
           }}</span>
           <span>)</span>
         </p>
+        <p class="mt-1">วันที่ {{ todayThai }}</p>
       </div>
     </div>
 
     <!-- Footer Stats & Commander -->
     <div
-      class="grid grid-cols-2 gap-6 text-[12pt] border-t border-gray-300 pt-4"
+      class="stats-block grid grid-cols-2 gap-4 text-[10pt] border-t border-gray-300 pt-2"
     >
       <!-- Left Column: Stats Table -->
       <div>
-        <p class="font-bold underline mb-2 text-center">
-          สถิติการลาในปีงบประมาณนี้
+        <p class="text-center mb-4">
+          <span class="section-title">สถิติการลาในปีงบประมาณนี้</span>
         </p>
 
         <!-- Table for Vacation -->
         <table
           v-if="data.type === 'vacation'"
-          class="w-full border-collapse border border-black text-center text-[11pt]"
+          class="stat-table mt-2 w-full text-center text-[10pt]"
         >
           <thead>
-            <tr class="bg-gray-50">
+            <tr>
               <th class="border border-black p-1 font-bold">
                 ลามาแล้ว<br />(วันทำการ)
               </th>
@@ -304,10 +314,10 @@
         <!-- Table for Other Types -->
         <table
           v-else
-          class="w-full border-collapse border border-black text-center text-[11pt]"
+          class="stat-table mt-2 w-full text-center text-[10pt]"
         >
           <thead>
-            <tr class="bg-gray-50">
+            <tr>
               <th class="border border-black p-1 font-bold">ประเภทการลา</th>
               <th class="border border-black p-1 font-bold">ลามาแล้ว</th>
               <th class="border border-black p-1 font-bold">ลาครั้งนี้</th>
@@ -357,86 +367,80 @@
         </table>
 
         <!-- Approvers flow under stats -->
-        <div class="mt-4 space-y-1 text-[11pt]">
-          <p>
-            (ลงชื่อ)........................................................
-            ผู้ตรวจสอบ
-          </p>
-          <p>ตำแหน่ง........................................................</p>
-          <p>
-            วันที่............./.........................../.................
-          </p>
+        <div class="mt-[52px] space-y-1 text-[10pt]">
+          <div class="sign-line-wrap mt-1">
+            <p>(ลงชื่อ)........................................................ ผู้ตรวจสอบ</p>
+            <img
+              v-if="data.directorSignatureUrl"
+              :src="data.directorSignatureUrl"
+              alt="Director signature for inspector"
+              class="sign-line-image"
+              crossorigin="anonymous"
+            />
+          </div>
+          <p class="text-center mt-1.5">( {{ data.directorName || "........................................" }} )</p>
+          <p class="text-center">ตำแหน่ง ผู้อำนวยการ</p>
+          <p class="text-center">วันที่ {{ todayThai }}</p>
         </div>
 
-        <div
-          v-if="data.substituteName"
-          class="mt-4 border-t border-dashed border-gray-300 pt-3 text-[11pt]"
-        >
-          <p>ระหว่างลาข้าพเจ้าขอมอบงานให้</p>
-          <p class="flex items-baseline">
-            <span class="dotted-line flex-grow text-center mr-1">{{
-              data.substituteName
-            }}</span>
-            <span>ผู้ปฏิบัติหน้าที่แทน</span>
-          </p>
-          <p class="mt-3">
-            (ลงชื่อ)........................................................
-            ผู้รับมอบ
-          </p>
-          <p class="mt-0.5 text-center">( {{ data.substituteName }} )</p>
-          <p class="mt-3">
-            (ลงชื่อ)........................................................
-            ผู้อำนวยการกลุ่ม
-          </p>
-          <p class="mt-0.5 text-center">
-            (........................................................)
-          </p>
-        </div>
       </div>
 
       <!-- Right Column: Commander Opinion -->
-      <div class="border-l border-gray-300 pl-6 text-[12pt]">
-        <p class="font-bold underline mb-3 text-center">
-          ความเห็นผู้บังคับบัญชา
+      <div class="border-l border-gray-300 pl-4 text-[10pt]">
+        <p class="text-center mb-3">
+          <span class="section-title">ความเห็นผู้บังคับบัญชา</span>
         </p>
-        <div class="space-y-3">
-          <p class="border-b border-dotted border-black w-full h-5"></p>
-          <p class="border-b border-dotted border-black w-full h-5"></p>
+        <div class="commander-comment-box">
+          <p v-if="data.commanderComment" class="commander-comment-text">{{ data.commanderComment }}</p>
+          <div v-else class="space-y-2">
+            <p class="line-solid w-full h-5"></p>
+            <p class="line-solid w-full h-5"></p>
+          </div>
         </div>
-        <div class="text-center mt-4 space-y-1 text-[11pt]">
-          <p>
-            (ลงชื่อ)........................................................
-          </p>
-          <p>(........................................................)</p>
-          <p>ตำแหน่ง........................................................</p>
-          <p>
-            วันที่............./.........................../.................
-          </p>
-        </div>
-
-        <p class="font-bold underline mt-6 text-center">คำสั่ง</p>
-        <div class="flex justify-center gap-6 mt-3 select-none">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <span class="w-4 h-4 border border-black inline-block"></span>
+        <p class="font-bold underline mt-3 text-center">คำสั่ง</p>
+        <div class="flex justify-center gap-7 mt-2.5 select-none font-medium">
+          <span class="inline-flex items-center gap-2">
+            <span
+              class="pdf-checkbox pdf-checkbox-lg text-[10pt] font-bold shrink-0"
+            >
+              <span v-if="data.approvalDecision === 'approved'">✓</span>
+            </span>
             อนุญาต
-          </label>
-          <label class="flex items-center gap-2 cursor-pointer">
-            <span class="w-4 h-4 border border-black inline-block"></span>
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <span
+              class="pdf-checkbox pdf-checkbox-lg text-[10pt] font-bold shrink-0"
+            >
+              <span v-if="data.approvalDecision === 'rejected'">✓</span>
+            </span>
             ไม่อนุญาต
-          </label>
+          </span>
         </div>
 
-        <p class="border-b border-dotted border-black w-full mt-4 h-5"></p>
+        <p class="line-solid w-full mt-4 h-5"></p>
 
-        <div class="text-center mt-4 space-y-1 text-[11pt]">
-          <p>
-            (ลงชื่อ)........................................................
+        <div class="text-center mt-[52px] space-y-1 text-[10pt]">
+          <div class="sign-line-wrap">
+            <p>
+              (ลงชื่อ)........................................................
+            </p>
+            <img
+              v-if="data.directorSignatureUrl"
+              :src="data.directorSignatureUrl"
+              alt="Director signature"
+              class="sign-line-image"
+              crossorigin="anonymous"
+            />
+          </div>
+          <p class="flex items-baseline justify-center mt-1.5">
+            <span>(</span>
+            <span class="dotted-line w-[150px] text-center mx-1">{{
+              data.directorName || "&nbsp;"
+            }}</span>
+            <span>)</span>
           </p>
-          <p>(........................................................)</p>
-          <p>ตำแหน่ง........................................................</p>
-          <p>
-            วันที่............./.........................../.................
-          </p>
+          <p class="text-center">ตำแหน่ง ผู้อำนวยการ</p>
+          <p class="text-center">วันที่ {{ todayThai }}</p>
         </div>
       </div>
     </div>
@@ -478,6 +482,11 @@ interface LeaveData {
   email?: string;
   phone?: string;
   substituteName?: string;
+  teacherSignatureUrl?: string;
+  directorSignatureUrl?: string;
+  directorName?: string;
+  approvalDecision?: "approved" | "rejected" | "pending";
+  commanderComment?: string;
   stats?: {
     vacation?: LeaveStats;
     sick?: LeaveStats;
@@ -531,19 +540,127 @@ const formatThaiDate = (dateStr?: string) => {
   if (isNaN(date.getTime())) return dateStr;
   return `${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
 };
+
+const todayThai = computed(() => {
+  const now = new Date();
+  const day = now.getDate();
+  const month = thaiMonths[now.getMonth()];
+  const year = now.getFullYear() + 543;
+  return `${day} ${month} พ.ศ. ${year}`;
+});
 </script>
 
 <style scoped>
 .dotted-line {
   display: inline-block;
-  border-bottom: 1px dotted #000;
-  min-height: 1.4em;
-  padding: 0 4px;
-  vertical-align: bottom;
+  border-bottom: 1.5px solid #000;
+  min-height: 1.95em;
+  padding: 2px 6px 3px;
+  vertical-align: baseline;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
   color: #1e40af; /* Deep blue text */
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.signature-slot {
+  position: relative;
+  height: 36px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.signature-image {
+  max-width: 170px;
+  max-height: 34px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.sign-line-wrap {
+  position: relative;
+  padding-top: 18px;
+  margin-bottom: 6px;
+}
+
+.sign-line-image {
+  position: absolute;
+  left: 44%;
+  bottom: -0.8em;
+  transform: translateX(-50%);
+  max-width: 170px;
+  max-height: 36px;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+}
+
+.a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  height: 297mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  letter-spacing: 0.005em;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.line-solid {
+  border-bottom: 1.5px solid #000;
+}
+
+.section-title {
+  display: inline-block;
+  font-weight: 700;
+  line-height: 1.35;
+  border-bottom: 0.75px solid #000;
+  padding-bottom: 1px;
+}
+
+.commander-comment-box {
+  min-height: 44px;
+}
+
+.commander-comment-text {
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.stats-block {
+  line-height: 1.45;
+}
+
+.pdf-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  line-height: 1;
+}
+
+.pdf-checkbox-lg {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+.stat-table {
+  border-collapse: collapse;
+  border: 1.5px solid #000;
+}
+
+.stat-table th,
+.stat-table td {
+  border: 1.5px solid #000;
 }
 
 @media print {

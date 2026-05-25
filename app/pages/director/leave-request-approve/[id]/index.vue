@@ -55,7 +55,7 @@
           <button
             type="button"
             @click="downloadDoc"
-            :disabled="leaveRequest?.status !== 'approved'"
+            :disabled="leaveRequest?.status === 'pending'"
             class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:hover:bg-blue-300 disabled:cursor-not-allowed transition-colors"
           >
             ดาวน์โหลด PDF
@@ -108,7 +108,11 @@
                     {{ isActionLoading ? 'กำลังบันทึก...' : 'อนุมัติ' }}
                 </button>
               </div>
-              <p v-else class="text-xs text-slate-600">รายการนี้ดำเนินการแล้ว ไม่สามารถเปลี่ยนสถานะซ้ำได้</p>
+              <div v-else class="space-y-1">
+                <p class="text-xs text-slate-500">ผู้พิจารณา</p>
+                <p class="text-sm font-bold text-slate-900">{{ approverDisplayName }}</p>
+                <p v-if="leaveRequest.actionTime" class="text-xs text-slate-500">ดำเนินการเมื่อ: {{ leaveRequest.actionTime }}</p>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm lg:col-span-2">
@@ -335,6 +339,7 @@ interface LeaveRequest {
   reason: string
   attachmentUrl?: string
   status: 'pending' | 'approved' | 'rejected'
+  approvedByName?: string
   actionTime?: string
   rejectReason?: string
 }
@@ -349,6 +354,7 @@ interface ApiLeaveRequest {
   total_days: number
   reason: string
   status: 'pending' | 'approved' | 'rejected'
+  approved_by?: string
   approved_at?: string
   reject_reason?: string
   updated_at: string
@@ -405,6 +411,8 @@ interface LeaveRequestPdfApi {
   email?: string
   phone?: string
   substitute_name?: string
+  teacher_signature_url?: string
+  director_signature_url?: string
   stats?: {
     vacation?: PdfStats
     sick?: PdfStats
@@ -439,6 +447,11 @@ interface LeavePreviewData {
   email?: string
   phone?: string
   substituteName?: string
+  teacherSignatureUrl?: string
+  directorSignatureUrl?: string
+  directorName?: string
+  approvalDecision?: 'approved' | 'rejected' | 'pending'
+  commanderComment?: string
   stats?: {
     vacation?: { taken?: number; thisTime?: number; total?: number }
     sick?: { taken?: number; thisTime?: number; total?: number }
@@ -465,7 +478,14 @@ const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ
 const monthLongTH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 
 const computedPreviewData = computed(() => {
-  return previewPdfData.value || {}
+  return {
+    ...(previewPdfData.value || {}),
+    directorName: previewPdfData.value?.directorName || headerDisplayName.value,
+    approvalDecision: previewPdfData.value?.approvalDecision || leaveRequest.value?.status || 'pending',
+    commanderComment:
+      previewPdfData.value?.commanderComment ||
+      (leaveRequest.value?.status === 'rejected' ? leaveRequest.value?.rejectReason || '' : ''),
+  }
 })
 
 const headerDisplayName = computed(() => {
@@ -586,6 +606,11 @@ const loadLeaveRequest = async () => {
       email: pdf.email,
       phone: pdf.phone,
       substituteName: pdf.substitute_name,
+      teacherSignatureUrl: pdf.teacher_signature_url,
+      directorSignatureUrl: pdf.director_signature_url,
+      directorName: '',
+      approvalDecision: lr.status,
+      commanderComment: lr.status === 'rejected' ? lr.reject_reason || '' : '',
       stats: {
         vacation: {
           taken: pdf.stats?.vacation?.taken,
@@ -612,6 +637,19 @@ const loadLeaveRequest = async () => {
   } else {
     previewPdfData.value = null
     return
+  }
+
+  // Lookup actual approver to get correct director name
+  let approvedByName = ''
+  if (lr.approved_by && previewPdfData.value) {
+    try {
+      const approverRes = await $fetch<any>(`${BASE}/member/${lr.approved_by}`)
+      const approver = (approverRes?.data ?? null) as ApiMember | null
+      if (approver) {
+        approvedByName = `ผอ.${(approver.firstname || '').trim()} ${(approver.lastname || '').trim()}`.trim()
+        previewPdfData.value.directorName = approvedByName
+      }
+    } catch { /* ignore, fallback to headerDisplayName via computed */ }
   }
 
   const memberRes = await $fetch<any>(`${BASE}/member/${lr.member_id}`)
@@ -657,6 +695,7 @@ const loadLeaveRequest = async () => {
     reason: lr.reason,
     attachmentUrl: lr.attachment_url || '',
     status: lr.status,
+    approvedByName,
     actionTime: formatDateTimeShort(lr.updated_at),
     rejectReason: lr.reject_reason,
   }
@@ -679,6 +718,12 @@ const isPdfFile = (fileName?: string) => {
   if (!fileName) return false
   return fileName.toLowerCase().endsWith('.pdf')
 }
+
+const approverDisplayName = computed(() => {
+  if (!leaveRequest.value) return '-'
+  if (leaveRequest.value.status === 'pending') return 'รอพิจารณา'
+  return leaveRequest.value.approvedByName || '-'
+})
 
 const getLeaveTypeText = (type: string) => {
   if (type === 'sick') return 'ลาป่วย'
@@ -747,8 +792,8 @@ const getStatusClass = (status: string) => {
 }
 
 const downloadDoc = async () => {
-  if (!leaveRequest.value || leaveRequest.value.status !== 'approved') {
-    addToast('warning', 'ยังดาวน์โหลดไม่ได้', 'ดาวน์โหลดเอกสารได้เมื่อสถานะอนุมัติแล้วเท่านั้น')
+  if (!leaveRequest.value || leaveRequest.value.status === 'pending') {
+    addToast('warning', 'ยังดาวน์โหลดไม่ได้', 'ดาวน์โหลดเอกสารได้เมื่อสถานะอนุมัติหรือปฏิเสธแล้วเท่านั้น')
     return
   }
 
@@ -757,6 +802,10 @@ const downloadDoc = async () => {
     let sandbox: HTMLDivElement | null = null
     try {
       await nextTick()
+      if ((document as any).fonts?.ready) {
+        await (document as any).fonts.ready
+      }
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
       const html2pdfModule = await import('html2pdf.js')
       const html2pdf = (html2pdfModule.default ?? html2pdfModule) as any
       const source = pdfContentRef.value
@@ -786,7 +835,15 @@ const downloadDoc = async () => {
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       }
 
-      await html2pdf().set(opt).from(cloned).save()
+      const worker = html2pdf().set(opt).from(cloned)
+      const blobUrl = (await worker.outputPdf('bloburl')) as string
+      const previewTab = window.open(blobUrl, '_blank', 'noopener,noreferrer')
+
+      if (!previewTab) {
+        await worker.save()
+      }
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
     } catch (error) {
       console.error('PDF download failed (director):', error)
       addToast('error', 'ดาวน์โหลดไม่สำเร็จ', 'ระบบไม่สามารถสร้างไฟล์ PDF ได้ กรุณาลองใหม่อีกครั้ง')
