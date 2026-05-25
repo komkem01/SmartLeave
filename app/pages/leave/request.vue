@@ -272,6 +272,11 @@ const exportToPDF = async () => {
   if (import.meta.client) {
     const html2pdf = (await import('html2pdf.js')).default
     const element = document.getElementById('pdf-content')
+
+    if ((document as any).fonts?.ready) {
+      await (document as any).fonts.ready
+    }
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
     
     // Configure PDF options
     const opt = {
@@ -282,8 +287,16 @@ const exportToPDF = async () => {
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }
     
-    // Generate PDF
-    html2pdf().set(opt).from(element).save()
+    // Generate PDF and open preview in a new tab. Fallback to direct save when popup is blocked.
+    const worker = html2pdf().set(opt).from(element)
+    const blobUrl = (await worker.outputPdf('bloburl')) as string
+    const previewTab = window.open(blobUrl, '_blank', 'noopener,noreferrer')
+
+    if (!previewTab) {
+      await worker.save()
+    }
+
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
   }
 }
 </script>
