@@ -405,6 +405,8 @@ interface LeaveRequestPdfApi {
   email?: string
   phone?: string
   substitute_name?: string
+  teacher_signature_url?: string
+  director_signature_url?: string
   stats?: {
     vacation?: PdfStats
     sick?: PdfStats
@@ -439,6 +441,8 @@ interface LeavePreviewData {
   email?: string
   phone?: string
   substituteName?: string
+  teacherSignatureUrl?: string
+  directorSignatureUrl?: string
   stats?: {
     vacation?: { taken?: number; thisTime?: number; total?: number }
     sick?: { taken?: number; thisTime?: number; total?: number }
@@ -586,6 +590,8 @@ const loadLeaveRequest = async () => {
       email: pdf.email,
       phone: pdf.phone,
       substituteName: pdf.substitute_name,
+      teacherSignatureUrl: pdf.teacher_signature_url,
+      directorSignatureUrl: pdf.director_signature_url,
       stats: {
         vacation: {
           taken: pdf.stats?.vacation?.taken,

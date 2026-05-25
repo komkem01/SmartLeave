@@ -451,7 +451,7 @@
             </button>
             <button
               type="submit"
-              :disabled="isLoading || hasErrors"
+              :disabled="isLoading || isUploadingSignature || hasErrors"
               class="w-full sm:w-2/3 flex justify-center py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <span v-if="isLoading" class="mr-2 flex items-center">
@@ -475,7 +475,13 @@
                   />
                 </svg>
               </span>
-              {{ isLoading ? "กำลังประมวลผลข้อมูล..." : "ลงทะเบียนบัญชีใหม่" }}
+              {{
+                isUploadingSignature
+                  ? "กำลังอัปโหลดลายเซ็น..."
+                  : isLoading
+                    ? "กำลังประมวลผลข้อมูล..."
+                    : "ลงทะเบียนบัญชีใหม่"
+              }}
             </button>
           </div>
         </form>
@@ -498,8 +504,11 @@ const router = useRouter();
 const { addToast } = useToast();
 const config = useRuntimeConfig();
 const BASE = config.public.BASE_API;
+const STORAGE_UPLOAD_URL =
+  "https://storages-production.up.railway.app/api/v1/storages/upload";
 
 const isLoading = ref<boolean>(false);
+const isUploadingSignature = ref<boolean>(false);
 
 // ---------- State สำหรับเก็บไฟล์ลายเซ็น ----------
 const signatureFile = ref<File | null>(null);
@@ -568,6 +577,9 @@ const onSignatureChange = (e: Event) => {
     }
 
     signatureFile.value = file;
+    if (signaturePreview.value) {
+      URL.revokeObjectURL(signaturePreview.value);
+    }
     signaturePreview.value = URL.createObjectURL(file);
   }
 };
@@ -718,6 +730,23 @@ const hasErrors = computed(
     !!errors.value.confirmPassword,
 );
 
+const uploadSignatureFile = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await $fetch<any>(STORAGE_UPLOAD_URL, {
+    method: "POST",
+    body: formData,
+  });
+
+  const refID = String(res?.data?.id || "").trim();
+  if (!refID) {
+    throw new Error("signature-ref-id-not-found");
+  }
+
+  return refID;
+};
+
 // ---------- Submit (ส่งข้อมูลพร้อมไฟล์) ----------
 const handleRegister = async () => {
   validateEmail();
@@ -758,29 +787,29 @@ const handleRegister = async () => {
 
   isLoading.value = true;
 
-  const formData = new FormData();
-  formData.append("gender_id", f.genderId);
-  formData.append("prefix_id", f.prefixId);
-  formData.append("email", f.email);
-  formData.append("phone", f.phone);
-  formData.append("password", f.password);
-  formData.append("firstname", f.firstName);
-  formData.append("lastname", f.lastName);
-  formData.append("department", f.department);
-  formData.append("role", f.role);
-  formData.append("province_id", f.provinceId);
-  formData.append("district_id", f.districtId);
-  formData.append("sub_district_id", f.subDistrictId);
-  formData.append("zipcode_id", f.zipcodeId);
-  formData.append("is_active", "true");
-
-  // แนบไฟล์ลายเซ็น
-  formData.append("signature", signatureFile.value);
-
   try {
+    isUploadingSignature.value = true;
+    const signatureRefID = await uploadSignatureFile(signatureFile.value);
+
     await $fetch(`${BASE}/member`, {
       method: "POST",
-      body: formData,
+      body: {
+        gender_id: f.genderId,
+        prefix_id: f.prefixId,
+        signature_ref_id: signatureRefID,
+        email: f.email,
+        phone: f.phone,
+        password: f.password,
+        firstname: f.firstName,
+        lastname: f.lastName,
+        department: f.department,
+        role: f.role,
+        province_id: f.provinceId,
+        district_id: f.districtId,
+        sub_district_id: f.subDistrictId,
+        zipcode_id: f.zipcodeId,
+        is_active: true,
+      },
     });
 
     addToast(
@@ -797,6 +826,7 @@ const handleRegister = async () => {
         : "เกิดข้อผิดพลาดในการลงทะเบียน โปรดลองใหม่";
     addToast("error", "ลงทะเบียนไม่สำเร็จ", msg);
   } finally {
+    isUploadingSignature.value = false;
     isLoading.value = false;
   }
 };

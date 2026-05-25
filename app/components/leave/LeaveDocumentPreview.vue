@@ -245,6 +245,15 @@
     <div class="flex justify-end mb-6 text-[14pt]">
       <div class="text-center w-1/2">
         <p>ขอแสดงความนับถือ</p>
+        <div class="mt-3 h-[48px] flex items-end justify-center">
+          <img
+            v-if="data.teacherSignatureUrl"
+            :src="data.teacherSignatureUrl"
+            alt="Teacher signature"
+            class="h-[42px] max-w-[180px] object-contain"
+            crossorigin="anonymous"
+          />
+        </div>
         <p class="mt-6">
           (ลงชื่อ)........................................................
         </p>
@@ -404,6 +413,15 @@
           <p class="border-b border-dotted border-black w-full h-5"></p>
         </div>
         <div class="text-center mt-4 space-y-1 text-[11pt]">
+          <div class="h-[40px] flex items-end justify-center">
+            <img
+              v-if="data.directorSignatureUrl"
+              :src="data.directorSignatureUrl"
+              alt="Director signature"
+              class="h-[34px] max-w-[170px] object-contain"
+              crossorigin="anonymous"
+            />
+          </div>
           <p>
             (ลงชื่อ)........................................................
           </p>
@@ -478,6 +496,8 @@ interface LeaveData {
   email?: string;
   phone?: string;
   substituteName?: string;
+  teacherSignatureUrl?: string;
+  directorSignatureUrl?: string;
   stats?: {
     vacation?: LeaveStats;
     sick?: LeaveStats;
