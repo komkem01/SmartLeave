@@ -443,6 +443,8 @@ interface LeavePreviewData {
   substituteName?: string
   teacherSignatureUrl?: string
   directorSignatureUrl?: string
+  directorName?: string
+  approvalDecision?: 'approved' | 'rejected' | 'pending'
   stats?: {
     vacation?: { taken?: number; thisTime?: number; total?: number }
     sick?: { taken?: number; thisTime?: number; total?: number }
@@ -469,7 +471,11 @@ const monthShortTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ
 const monthLongTH = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 
 const computedPreviewData = computed(() => {
-  return previewPdfData.value || {}
+  return {
+    ...(previewPdfData.value || {}),
+    directorName: previewPdfData.value?.directorName || headerDisplayName.value,
+    approvalDecision: previewPdfData.value?.approvalDecision || leaveRequest.value?.status || 'pending',
+  }
 })
 
 const headerDisplayName = computed(() => {
@@ -592,6 +598,8 @@ const loadLeaveRequest = async () => {
       substituteName: pdf.substitute_name,
       teacherSignatureUrl: pdf.teacher_signature_url,
       directorSignatureUrl: pdf.director_signature_url,
+      directorName: headerDisplayName.value,
+      approvalDecision: lr.status,
       stats: {
         vacation: {
           taken: pdf.stats?.vacation?.taken,

@@ -446,6 +446,8 @@ interface LeavePreviewData {
   substituteName?: string;
   teacherSignatureUrl?: string
   directorSignatureUrl?: string
+  directorName?: string
+  approvalDecision?: "approved" | "rejected" | "pending"
   stats?: {
     vacation?: { taken?: number; thisTime?: number; total?: number };
     sick?: { taken?: number; thisTime?: number; total?: number };
@@ -460,7 +462,13 @@ const previewPdfData = ref<LeavePreviewData | null>(null);
 const pdfContentRef = ref<HTMLElement | null>(null);
 
 const computedPreviewData = computed(() => {
-  return previewPdfData.value || {};
+  return {
+    ...(previewPdfData.value || {}),
+    directorName:
+      previewPdfData.value?.directorName || leaveRequest.value?.approvedByName || "",
+    approvalDecision:
+      previewPdfData.value?.approvalDecision || leaveRequest.value?.status || "pending",
+  };
 });
 
 const profileFullName = computed(() => {
@@ -740,6 +748,7 @@ const loadDetail = async () => {
       substituteName: pdf.substitute_name,
       teacherSignatureUrl: pdf.teacher_signature_url,
       directorSignatureUrl: pdf.director_signature_url,
+      approvalDecision: lr.status,
       stats: {
         vacation: {
           taken: pdf.stats?.vacation?.taken,
@@ -789,6 +798,12 @@ const loadDetail = async () => {
         }).catch(() => null)
       : null;
     const approver = (approverRes?.data ?? null) as ApiMember | null;
+
+    if (previewPdfData.value) {
+      previewPdfData.value.directorName = approver
+        ? `ผอ.${(approver.firstname || "").trim()} ${(approver.lastname || "").trim()}`.trim()
+        : "";
+    }
 
     const [
       prefixName,
